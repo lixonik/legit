@@ -25,6 +25,8 @@ type Incoming =
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
   | { type: 'unshelve' | 'deleteShelf'; id: string }
+  | { type: 'openFile'; path: string }
+  | { type: 'markResolved'; paths: string[] }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -220,6 +222,13 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'openDiff':
         await this.openDiff(m.path, m.untracked);
+        break;
+      case 'openFile':
+        await vscode.commands.executeCommand('vscode.open', this.repo.absUri(m.path));
+        break;
+      case 'markResolved':
+        await this.repo.git.add(m.paths);
+        await this.repo.refresh();
         break;
       case 'rollback':
         await this.rollback(m.items);

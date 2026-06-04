@@ -13,6 +13,7 @@ export interface ChangeItem {
   letter: string;
   untracked: boolean;
   deleted: boolean;
+  conflicted: boolean;
   fsPath: string;
 }
 
@@ -177,6 +178,7 @@ export class Repository implements vscode.Disposable {
 
 function toItem(ch: FileChange, root: string): ChangeItem {
   const code = ch.status.trim()[0] ?? '';
+  const conflicted = ch.status.includes('U') || ch.status === 'AA' || ch.status === 'DD';
   const labelMap: Record<string, string> = {
     M: 'Modified',
     A: 'Added',
@@ -185,14 +187,20 @@ function toItem(ch: FileChange, root: string): ChangeItem {
     C: 'Copied',
     U: 'Conflict',
   };
+  const statusLabel = conflicted
+    ? 'Merge conflict'
+    : ch.untracked
+      ? 'Unversioned'
+      : labelMap[code] ?? ch.status.trim();
   return {
     path: ch.path,
     origPath: ch.origPath,
     status: ch.status,
-    statusLabel: ch.untracked ? 'Unversioned' : labelMap[code] ?? ch.status.trim(),
-    letter: ch.untracked ? '?' : code,
+    statusLabel,
+    letter: conflicted ? 'U' : ch.untracked ? '?' : code,
     untracked: ch.untracked,
-    deleted: ch.status.includes('D'),
+    deleted: !conflicted && ch.status.includes('D'),
+    conflicted,
     fsPath: path.join(root, ch.path),
   };
 }

@@ -256,7 +256,7 @@
     });
 
     const icon = document.createElement('i');
-    icon.className = 'codicon codicon-file';
+    icon.className = 'codicon ' + (f.conflicted ? 'codicon-git-merge' : 'codicon-file');
 
     const fname = document.createElement('span');
     fname.className = 'fname ' + cls(f.letter) + (f.deleted ? ' deleted' : '');
@@ -265,17 +265,22 @@
     row.append(sp, cb, icon, fname);
     row.addEventListener('click', (e) => {
       if (e.target === cb) return;
-      vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
+      if (f.conflicted) vscode.postMessage({ type: 'openFile', path: f.path });
+      else vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
     });
     row.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showCtx(e, [
-        { label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) },
-        { label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) },
-        { label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) },
-        { label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) },
-      ]);
+      const menu = [];
+      if (f.conflicted) {
+        menu.push({ label: 'Open / Resolve Conflict', cmd: () => vscode.postMessage({ type: 'openFile', path: f.path }) });
+        menu.push({ label: 'Mark as Resolved', cmd: () => vscode.postMessage({ type: 'markResolved', paths: [f.path] }) });
+      }
+      menu.push({ label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) });
+      menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
+      menu.push({ label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) });
+      menu.push({ label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) });
+      showCtx(e, menu);
     });
     return row;
   }
