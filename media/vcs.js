@@ -4,6 +4,7 @@
   const checked = new Set();
   const known = new Set();
   const collapsed = new Set();
+  let groupByDir = true;
 
   // Log state
   let logCommits = [];
@@ -72,6 +73,12 @@
     if (items.length) vscode.postMessage({ type: 'shelve', items });
   });
   $('shelf-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestShelf' }));
+  $('tb-group').addEventListener('click', () => {
+    groupByDir = !groupByDir;
+    const i = document.querySelector('#tb-group .codicon');
+    if (i) i.className = 'codicon ' + (groupByDir ? 'codicon-list-tree' : 'codicon-list-flat');
+    render();
+  });
   commitBtn.addEventListener('click', () => doCommit(false));
   commitPushBtn.addEventListener('click', () => doCommit(true));
   msg.addEventListener('input', updateCommitState);
@@ -141,7 +148,13 @@
     for (const cl of state.changelists) {
       tree.appendChild(changelistNode(cl));
       if (!collapsed.has(cl.id)) {
-        renderNode(buildTree(cl.files), cl, 1);
+        if (groupByDir) {
+          renderNode(buildTree(cl.files), cl, 1);
+        } else {
+          for (const f of cl.files.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+            tree.appendChild(fileRow(f, 1, true));
+          }
+        }
       }
     }
     updateCommitState();
@@ -237,7 +250,7 @@
     return row;
   }
 
-  function fileRow(f, depth) {
+  function fileRow(f, depth, showDir) {
     const row = document.createElement('div');
     row.className = 'tree-row';
     row.style.paddingLeft = indent(depth);
@@ -263,6 +276,12 @@
     fname.textContent = baseName(f.path);
 
     row.append(sp, cb, icon, fname);
+    if (showDir) {
+      const dir = document.createElement('span');
+      dir.className = 'fdir';
+      dir.textContent = dirName(f.path);
+      row.append(dir);
+    }
     row.addEventListener('click', (e) => {
       if (e.target === cb) return;
       if (f.conflicted) vscode.postMessage({ type: 'openFile', path: f.path });

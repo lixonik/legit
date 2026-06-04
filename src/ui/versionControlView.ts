@@ -373,6 +373,8 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <span class="sep"></span>
       <button class="tool" id="tb-expand" title="Expand all"><i class="codicon codicon-expand-all"></i></button>
       <button class="tool" id="tb-collapse" title="Collapse all"><i class="codicon codicon-collapse-all"></i></button>
+      <span class="sep"></span>
+      <button class="tool" id="tb-group" title="Group by directory / flat list"><i class="codicon codicon-list-tree"></i></button>
     </div>
     <div class="tree" id="tree"></div>
     <div class="commit-area">
