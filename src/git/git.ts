@@ -189,6 +189,40 @@ export class Git {
       return '';
     }
   }
+
+  async branches(): Promise<{ current: string; locals: string[]; remotes: string[] }> {
+    const current = await this.currentBranch();
+    const l = await this.raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads']).catch(() => '');
+    const r = await this.raw(['for-each-ref', '--format=%(refname:short)', 'refs/remotes']).catch(() => '');
+    const locals = l.split('\n').map((s) => s.trim()).filter(Boolean);
+    const remotes = r
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .filter((x) => !x.endsWith('/HEAD'));
+    return { current, locals, remotes };
+  }
+
+  async checkout(ref: string): Promise<void> {
+    await this.raw(['checkout', ref]);
+  }
+  async checkoutNew(name: string, from?: string): Promise<void> {
+    const args = ['checkout', '-b', name];
+    if (from) args.push(from);
+    await this.raw(args);
+  }
+  async mergeBranch(ref: string): Promise<void> {
+    await this.raw(['merge', ref]);
+  }
+  async rebaseOnto(ref: string): Promise<void> {
+    await this.raw(['rebase', ref]);
+  }
+  async deleteBranch(name: string, force = false): Promise<void> {
+    await this.raw(['branch', force ? '-D' : '-d', name]);
+  }
+  async renameBranch(oldName: string, newName: string): Promise<void> {
+    await this.raw(['branch', '-m', oldName, newName]);
+  }
 }
 
 function normalize(p: string): string {

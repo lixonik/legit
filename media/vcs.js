@@ -69,6 +69,9 @@
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
   logSearch.addEventListener('input', renderLog);
 
+  // Clicking the branch label opens the Branches popup (like the JetBrains widget).
+  branchLabel.addEventListener('click', () => vscode.postMessage({ type: 'branches' }));
+
   function doCommit(push) {
     const all = allPaths();
     const paths = [...checked].filter((p) => all.has(p));

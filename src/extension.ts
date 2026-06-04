@@ -4,6 +4,7 @@ import { ChangelistStore } from './model/changelistStore';
 import { Repository } from './model/repository';
 import { registerDiff } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
+import { showBranches } from './ui/branches';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const folder = vscode.workspace.workspaceFolders?.[0];
@@ -25,6 +26,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
+  const branchItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  branchItem.command = 'legit.branches';
+  branchItem.tooltip = 'legit: Git branches';
+  context.subscriptions.push(branchItem);
+  const updateBranch = () => {
+    branchItem.text = repo.branch ? `$(git-branch) ${repo.branch}` : '$(git-branch) legit';
+    branchItem.show();
+  };
+  context.subscriptions.push(repo.onDidChange(updateBranch));
+
   const reg = (id: string, fn: (...args: any[]) => any) =>
     context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
@@ -33,9 +44,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const name = await vscode.window.showInputBox({ prompt: 'New changelist name', placeHolder: 'Feature X' });
     if (name) await repo.newChangelist(name.trim());
   });
+  reg('legit.branches', () => showBranches(repo));
   reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 
   await repo.refresh();
+  updateBranch();
 }
 
 export function deactivate(): void {}

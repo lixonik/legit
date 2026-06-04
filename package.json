@@ -41,12 +41,14 @@
     "commands": [
       { "command": "legit.refresh", "title": "Refresh", "category": "legit", "icon": "$(refresh)" },
       { "command": "legit.newChangelist", "title": "New Changelist...", "category": "legit", "icon": "$(add)" },
-      { "command": "legit.focus", "title": "Show Version Control", "category": "legit" }
+      { "command": "legit.focus", "title": "Show Version Control", "category": "legit" },
+      { "command": "legit.branches", "title": "Branches...", "category": "legit", "icon": "$(git-branch)" }
     ],
     "menus": {
       "view/title": [
-        { "command": "legit.newChangelist", "when": "view == legit.versionControl", "group": "navigation@1" },
-        { "command": "legit.refresh", "when": "view == legit.versionControl", "group": "navigation@2" }
+        { "command": "legit.branches", "when": "view == legit.versionControl", "group": "navigation@1" },
+        { "command": "legit.newChangelist", "when": "view == legit.versionControl", "group": "navigation@2" },
+        { "command": "legit.refresh", "when": "view == legit.versionControl", "group": "navigation@3" }
       ]
     }
   },

@@ -55,7 +55,9 @@ body {
   color: var(--fg-dim);
   font-size: 11px;
   white-space: nowrap;
+  cursor: pointer;
 }
+.branch:hover { color: var(--fg); }
 
 .tabpanel { display: none; flex: 1 1 auto; min-height: 0; flex-direction: column; }
 .tabpanel.active { display: flex; }

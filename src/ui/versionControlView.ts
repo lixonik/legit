@@ -12,7 +12,7 @@ interface CommitMsg {
   push: boolean;
 }
 type Incoming =
-  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' }
+  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'branches' }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
   | { type: 'openDiff'; path: string; untracked: boolean }
@@ -58,6 +58,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'refresh':
         await this.repo.refresh();
+        break;
+      case 'branches':
+        await vscode.commands.executeCommand('legit.branches');
         break;
       case 'requestLog': {
         const commits = await this.repo.git.log();
