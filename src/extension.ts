@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { Git } from './git/git';
 import { ChangelistStore } from './model/changelistStore';
+import { ShelfStore } from './model/shelfStore';
 import { Repository } from './model/repository';
 import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
@@ -15,7 +17,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const git = new Git(repoRoot);
   const store = new ChangelistStore(context.workspaceState);
-  const repo = new Repository(git, store);
+  const storageBase = (context.storageUri ?? context.globalStorageUri).fsPath;
+  const shelf = new ShelfStore(context.workspaceState, path.join(storageBase, 'shelf'));
+  const repo = new Repository(git, store, shelf);
   context.subscriptions.push(repo);
   context.subscriptions.push(registerContentProviders(git));
 

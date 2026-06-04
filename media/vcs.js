@@ -13,6 +13,10 @@
   let selectedHash = null;
   let detailsCache = {};
 
+  // Shelf state
+  let shelfEntries = [];
+  const shelfCollapsed = new Set();
+
   const LANE_COLORS = ['#5b9bd5', '#6a8759', '#cc7832', '#9876aa', '#c75450', '#4eade5', '#bbb529', '#499c54'];
   const LANE_W = 14;
   const ROW_H = 22;
@@ -29,6 +33,7 @@
   const logList = $('log-list');
   const logDetails = $('log-details');
   const logSearch = $('log-search');
+  const shelfList = $('shelf-list');
 
   // Tabs
   document.querySelectorAll('.tab').forEach((t) => {
@@ -42,6 +47,7 @@
         logLoaded = true;
         vscode.postMessage({ type: 'requestLog' });
       }
+      if (tab === 'shelf') vscode.postMessage({ type: 'requestShelf' });
     });
   });
 
@@ -61,6 +67,11 @@
     const items = checkedItems();
     if (items.length) vscode.postMessage({ type: 'rollback', items });
   });
+  $('tb-shelve').addEventListener('click', () => {
+    const items = checkedItems();
+    if (items.length) vscode.postMessage({ type: 'shelve', items });
+  });
+  $('shelf-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestShelf' }));
   commitBtn.addEventListener('click', () => doCommit(false));
   commitPushBtn.addEventListener('click', () => doCommit(true));
   msg.addEventListener('input', updateCommitState);
@@ -513,6 +524,67 @@
     logDetails.appendChild(files);
   }
 
+  // ---- Shelf rendering ----
+  function renderShelf() {
+    shelfList.innerHTML = '';
+    if (!shelfEntries.length) {
+      const none = document.createElement('div');
+      none.className = 'placeholder';
+      none.textContent = 'No shelved changes. Select files in Local Changes and click Shelve (⇩).';
+      shelfList.appendChild(none);
+      return;
+    }
+    for (const sh of shelfEntries) {
+      const node = document.createElement('div');
+      node.className = 'cl-node';
+
+      const chev = document.createElement('span');
+      chev.className = 'chev' + (shelfCollapsed.has(sh.id) ? ' collapsed' : '');
+      chev.textContent = '▾';
+      chev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (shelfCollapsed.has(sh.id)) shelfCollapsed.delete(sh.id);
+        else shelfCollapsed.add(sh.id);
+        renderShelf();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'cl-name';
+      name.textContent = sh.name;
+
+      const meta = document.createElement('span');
+      meta.className = 'cl-count';
+      meta.textContent =
+        sh.files.length + ' file' + (sh.files.length > 1 ? 's' : '') + '  ' + (sh.date || '').slice(0, 16).replace('T', ' ');
+
+      node.append(chev, name, meta);
+      node.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showCtx(e, [
+          { label: 'Unshelve (apply and remove)', cmd: () => vscode.postMessage({ type: 'unshelve', id: sh.id }) },
+          { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteShelf', id: sh.id }) },
+        ]);
+      });
+      shelfList.appendChild(node);
+
+      if (!shelfCollapsed.has(sh.id)) {
+        for (const f of sh.files) {
+          const row = document.createElement('div');
+          row.className = 'file-row';
+          const fname = document.createElement('span');
+          fname.className = 'fname';
+          fname.textContent = baseName(f);
+          const dir = document.createElement('span');
+          dir.className = 'fdir';
+          dir.textContent = dirName(f);
+          row.append(fname, dir);
+          shelfList.appendChild(row);
+        }
+      }
+    }
+  }
+
   // ---- Incoming messages ----
   window.addEventListener('message', (ev) => {
     const m = ev.data;
@@ -534,6 +606,9 @@
     } else if (m.type === 'commitDetailsData') {
       detailsCache[m.hash] = m;
       if (m.hash === selectedHash) renderDetails(m);
+    } else if (m.type === 'shelfData') {
+      shelfEntries = m.entries || [];
+      renderShelf();
     }
   });
 

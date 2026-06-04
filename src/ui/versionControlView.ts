@@ -12,7 +12,7 @@ interface CommitMsg {
   push: boolean;
 }
 type Incoming =
-  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'branches' }
+  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'branches' }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
   | { type: 'openDiff'; path: string; untracked: boolean }
@@ -20,6 +20,8 @@ type Incoming =
   | { type: 'commitDetails'; hash: string }
   | { type: 'openRevDiff'; hash: string; parent: string; path: string }
   | { type: 'copyHash' | 'checkoutRev' | 'newBranchAt' | 'cherryPick' | 'revertCommit' | 'resetTo'; hash: string }
+  | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
+  | { type: 'unshelve' | 'deleteShelf'; id: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -52,6 +54,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: 'state', payload: this.repo.view() });
   }
 
+  private postShelf(): void {
+    this.view?.webview.postMessage({ type: 'shelfData', entries: this.repo.shelves() });
+  }
+
   private async onMessage(m: Incoming): Promise<void> {
     switch (m.type) {
       case 'ready':
@@ -63,6 +69,44 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'branches':
         await vscode.commands.executeCommand('legit.branches');
         break;
+      case 'requestShelf':
+        this.postShelf();
+        break;
+      case 'shelve': {
+        if (!m.items?.length) {
+          vscode.window.showWarningMessage('legit: select files to shelve.');
+          break;
+        }
+        const def = this.repo.store.getChangelist(this.repo.store.activeId)?.name ?? 'Shelved changes';
+        const name = await vscode.window.showInputBox({ prompt: 'Shelf name', value: def });
+        if (name === undefined) break;
+        try {
+          await this.repo.shelve(name.trim() || def, m.items);
+          this.postShelf();
+          vscode.window.showInformationMessage(`legit: shelved ${m.items.length} file(s).`);
+        } catch (err) {
+          vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        break;
+      }
+      case 'unshelve':
+        try {
+          await this.repo.unshelve(m.id);
+          this.postShelf();
+          vscode.window.showInformationMessage('legit: unshelved.');
+        } catch (err) {
+          vscode.window.showErrorMessage(
+            `legit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
+          );
+        }
+        break;
+      case 'deleteShelf': {
+        const ok = await vscode.window.showWarningMessage('Delete this shelf?', { modal: true }, 'Delete');
+        if (ok !== 'Delete') break;
+        await this.repo.deleteShelf(m.id);
+        this.postShelf();
+        break;
+      }
       case 'requestLog': {
         const commits = await this.repo.git.log();
         this.view?.webview.postMessage({ type: 'logData', commits });
@@ -282,6 +326,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <button class="tool" id="tb-new" title="New changelist">＋</button>
       <span class="sep"></span>
       <button class="tool" id="tb-rollback" title="Rollback selected">↶</button>
+      <button class="tool" id="tb-shelve" title="Shelve selected">⇩</button>
       <span class="sep"></span>
       <button class="tool" id="tb-expand" title="Expand all">⊞</button>
       <button class="tool" id="tb-collapse" title="Collapse all">⊟</button>
@@ -310,7 +355,12 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     </div>
   </div>
 
-  <div class="tabpanel" data-tab="shelf"><div class="placeholder">Shelf (shelved changes): coming soon.</div></div>
+  <div class="tabpanel" data-tab="shelf">
+    <div class="toolbar">
+      <button class="tool" id="shelf-refresh" title="Refresh shelf">⟳</button>
+    </div>
+    <div class="tree" id="shelf-list"></div>
+  </div>
   <div class="tabpanel" data-tab="console"><div class="placeholder">Git console: coming soon.</div></div>
 
   <div class="ctx-menu" id="ctxmenu"></div>

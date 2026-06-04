@@ -34,10 +34,10 @@ with checkboxes, and an embedded commit box, the way IntelliJ classic UI does it
 2. Changelists model – done
 3. Commit and Push – done
 4. JetBrains-style webview tool window (Local Changes) – done
-5. Log / commit graph tab – next
-6. Shelf (shelve / unshelve) tab
-7. Branches popup
-8. Diff polish, per-hunk partial commit, interactive rebase, conflict resolver, blame
+5. Log / commit graph tab, with commit context actions – done
+6. Branches popup (status-bar widget, checkout / merge / rebase / rename / delete) – done
+7. Shelf (shelve / unshelve) tab – done
+8. Diff polish, per-hunk partial commit, interactive rebase, conflict resolver, blame – next
 
 ## Development
 

@@ -233,6 +233,21 @@ export class Git {
   async reset(hash: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
     await this.raw(['reset', `--${mode}`, hash]);
   }
+
+  /** Record untracked files in the index (intent-to-add) so they show up in a diff. */
+  async addIntentToAdd(files: string[]): Promise<void> {
+    if (!files.length) return;
+    await this.raw(['add', '-N', '--', ...files]);
+  }
+
+  /** Unified diff of the given paths against HEAD (working tree vs HEAD). */
+  async diffHead(files: string[]): Promise<string> {
+    return this.raw(['diff', 'HEAD', '--', ...files]);
+  }
+
+  async applyPatch(patchPath: string): Promise<void> {
+    await this.raw(['apply', '--whitespace=nowarn', patchPath]);
+  }
 }
 
 function normalize(p: string): string {

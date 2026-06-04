@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { Git, FileChange } from '../git/git';
 import { ChangelistStore } from './changelistStore';
+import { ShelfStore, ShelfEntry } from './shelfStore';
 
 export interface ChangeItem {
   path: string;
@@ -42,6 +44,7 @@ export class Repository implements vscode.Disposable {
   constructor(
     readonly git: Git,
     readonly store: ChangelistStore,
+    readonly shelf: ShelfStore,
   ) {
     this.disposables.push(this.store.onDidChange(() => this._onDidChange.fire()));
     const watcher = vscode.workspace.createFileSystemWatcher('**/*');
@@ -112,6 +115,52 @@ export class Repository implements vscode.Disposable {
     await this.git.commit(message, paths, { amend: opts.amend });
     if (opts.push) await this.git.push();
     await this.refresh();
+  }
+
+  // ---- Shelf ----
+  shelves(): ShelfEntry[] {
+    return this.shelf.list();
+  }
+
+  /** Save the given files as a shelf patch and revert them in the working tree. */
+  async shelve(name: string, items: { path: string; untracked: boolean }[]): Promise<void> {
+    const tracked = items.filter((i) => !i.untracked).map((i) => i.path);
+    const untracked = items.filter((i) => i.untracked).map((i) => i.path);
+    const all = items.map((i) => i.path);
+
+    if (untracked.length) await this.git.addIntentToAdd(untracked);
+    const patch = await this.git.diffHead(all);
+    if (!patch.trim()) {
+      if (untracked.length) await this.git.raw(['reset', '-q', '--', ...untracked]).catch(() => undefined);
+      throw new Error('nothing to shelve in the selected files');
+    }
+    await this.shelf.add(name, all, patch);
+
+    if (tracked.length) await this.git.raw(['checkout', 'HEAD', '--', ...tracked]);
+    if (untracked.length) {
+      await this.git.raw(['reset', '-q', '--', ...untracked]).catch(() => undefined);
+      for (const rel of untracked) {
+        try {
+          fs.unlinkSync(path.join(this.git.repoRoot, rel));
+        } catch {
+          /* already gone */
+        }
+      }
+    }
+    await this.refresh();
+  }
+
+  /** Re-apply a shelf to the working tree and drop it from the shelf. */
+  async unshelve(id: string): Promise<void> {
+    const entry = this.shelf.get(id);
+    if (!entry) return;
+    await this.git.applyPatch(this.shelf.patchPath(id));
+    await this.shelf.remove(id);
+    await this.refresh();
+  }
+
+  async deleteShelf(id: string): Promise<void> {
+    await this.shelf.remove(id);
   }
 
   dispose(): void {
