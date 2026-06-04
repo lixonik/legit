@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Git } from './git/git';
 import { ChangelistStore } from './model/changelistStore';
 import { Repository } from './model/repository';
-import { registerDiff } from './ui/quickDiff';
+import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 
@@ -17,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const store = new ChangelistStore(context.workspaceState);
   const repo = new Repository(git, store);
   context.subscriptions.push(repo);
-  context.subscriptions.push(registerDiff(git));
+  context.subscriptions.push(registerContentProviders(git));
 
   const view = new VersionControlView(context, repo);
   context.subscriptions.push(
@@ -49,6 +49,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   await repo.refresh();
   updateBranch();
+
+  // Reveal the legit panel so it is discoverable instead of hidden behind the
+  // Terminal tab in the bottom panel.
+  void vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`);
 }
 
 export function deactivate(): void {}

@@ -26,8 +26,7 @@ with checkboxes, and an embedded commit box, the way IntelliJ classic UI does it
 - **Commit** the checked files with a message, plus **Commit and Push** and an
   **Amend** option. Commits use a pathspec so only the checked files are recorded.
 - **Rollback** selected files (discards local changes; deletes unversioned files).
-- Click a file to open a **HEAD <-> working tree** diff; change bars appear in the
-  editor gutter.
+- Click a file to open a **HEAD <-> working tree** diff.
 
 ## Roadmap
 
