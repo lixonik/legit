@@ -19,7 +19,10 @@ type Incoming =
   | { type: 'rollback'; items: { path: string; untracked: boolean }[] }
   | { type: 'commitDetails'; hash: string }
   | { type: 'openRevDiff'; hash: string; parent: string; path: string }
-  | { type: 'copyHash' | 'checkoutRev' | 'newBranchAt' | 'cherryPick' | 'revertCommit' | 'resetTo'; hash: string }
+  | {
+      type: 'copyHash' | 'checkoutRev' | 'newBranchAt' | 'cherryPick' | 'revertCommit' | 'resetTo' | 'editMessage' | 'undoCommit';
+      hash: string;
+    }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
   | { type: 'unshelve' | 'deleteShelf'; id: string }
   | CommitMsg;
@@ -162,6 +165,33 @@ export class VersionControlView implements vscode.WebviewViewProvider {
           if (ok !== 'Reset') break;
         }
         await this.runLogOp(() => this.repo.git.reset(m.hash, choice.mode), `reset to ${m.hash.slice(0, 7)}`);
+        break;
+      }
+      case 'editMessage': {
+        const head = await this.repo.git.headHash();
+        if (m.hash !== head) {
+          vscode.window.showInformationMessage('legit: only the latest commit can be reworded.');
+          break;
+        }
+        const current = await this.repo.git.commitBody(m.hash);
+        const message = await vscode.window.showInputBox({ prompt: 'Edit commit message', value: current });
+        if (message === undefined || !message.trim()) break;
+        await this.runLogOp(() => this.repo.git.amendMessage(message.trim()), 'reworded the latest commit');
+        break;
+      }
+      case 'undoCommit': {
+        const head = await this.repo.git.headHash();
+        if (m.hash !== head) {
+          vscode.window.showInformationMessage('legit: only the latest commit can be undone.');
+          break;
+        }
+        const ok = await vscode.window.showWarningMessage(
+          'Undo the last commit? Its changes return to Local Changes.',
+          { modal: true },
+          'Undo Commit',
+        );
+        if (ok !== 'Undo Commit') break;
+        await this.runLogOp(() => this.repo.git.undoLastCommit(), 'undid the last commit');
         break;
       }
       case 'newChangelist': {

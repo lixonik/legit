@@ -276,6 +276,20 @@ export class Git {
       return [];
     }
   }
+
+  async headHash(): Promise<string> {
+    try {
+      return (await this.raw(['rev-parse', 'HEAD'])).trim();
+    } catch {
+      return '';
+    }
+  }
+  async amendMessage(message: string): Promise<void> {
+    await this.raw(['commit', '--amend', '-m', message]);
+  }
+  async undoLastCommit(): Promise<void> {
+    await this.raw(['reset', '--soft', 'HEAD~1']);
+  }
 }
 
 function normalize(p: string): string {

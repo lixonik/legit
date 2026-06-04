@@ -544,6 +544,8 @@
         { label: 'New Branch from Here...', cmd: () => vscode.postMessage({ type: 'newBranchAt', hash: c.hash }) },
         { label: 'Cherry-Pick', cmd: () => vscode.postMessage({ type: 'cherryPick', hash: c.hash }) },
         { label: 'Revert Commit', cmd: () => vscode.postMessage({ type: 'revertCommit', hash: c.hash }) },
+        { label: 'Edit Commit Message...', cmd: () => vscode.postMessage({ type: 'editMessage', hash: c.hash }) },
+        { label: 'Undo Commit', cmd: () => vscode.postMessage({ type: 'undoCommit', hash: c.hash }) },
         { label: 'Reset Current Branch to Here...', cmd: () => vscode.postMessage({ type: 'resetTo', hash: c.hash }) },
         { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
       ]);
