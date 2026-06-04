@@ -134,17 +134,150 @@
   };
   const cls = (letter) => 'st-' + (letter === '?' ? 'Q' : letter);
 
-  // ---- Local Changes rendering ----
+  // ---- Local Changes rendering (directory tree) ----
   function render() {
     branchLabel.textContent = state.branch ? '⎇ ' + state.branch : '';
     tree.innerHTML = '';
     for (const cl of state.changelists) {
       tree.appendChild(changelistNode(cl));
       if (!collapsed.has(cl.id)) {
-        for (const f of cl.files) tree.appendChild(fileRow(f));
+        renderNode(buildTree(cl.files), cl, 1);
       }
     }
     updateCommitState();
+  }
+
+  function buildTree(files) {
+    const root = { dirs: new Map(), files: [], path: '' };
+    for (const f of files) {
+      const parts = f.path.split('/');
+      let node = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const seg = parts[i];
+        if (!node.dirs.has(seg)) {
+          node.dirs.set(seg, { dirs: new Map(), files: [], path: (node.path ? node.path + '/' : '') + seg });
+        }
+        node = node.dirs.get(seg);
+      }
+      node.files.push(f);
+    }
+    return root;
+  }
+
+  function collectFiles(node, out) {
+    for (const f of node.files) out.push(f.path);
+    for (const d of node.dirs.values()) collectFiles(d, out);
+    return out;
+  }
+
+  function renderNode(node, cl, depth) {
+    const dirNames = [...node.dirs.keys()].sort((a, b) => a.localeCompare(b));
+    for (const dn of dirNames) {
+      let child = node.dirs.get(dn);
+      let label = dn;
+      // Compact middle packages: collapse single-child directory chains.
+      while (child.dirs.size === 1 && child.files.length === 0) {
+        const onlyKey = [...child.dirs.keys()][0];
+        label += '/' + onlyKey;
+        child = child.dirs.get(onlyKey);
+      }
+      tree.appendChild(folderRow(child, cl, depth, label));
+      if (!collapsed.has(cl.id + '::' + child.path)) renderNode(child, cl, depth + 1);
+    }
+    for (const f of node.files.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+      tree.appendChild(fileRow(f, depth));
+    }
+  }
+
+  function indent(depth) {
+    return 8 + depth * 14 + 'px';
+  }
+
+  function folderRow(node, cl, depth, label) {
+    const key = cl.id + '::' + node.path;
+    const isCollapsed = collapsed.has(key);
+    const row = document.createElement('div');
+    row.className = 'tree-row folder';
+    row.style.paddingLeft = indent(depth);
+
+    const chev = document.createElement('span');
+    chev.className = 'chev' + (isCollapsed ? ' collapsed' : '');
+    chev.textContent = '▾';
+
+    const descendants = collectFiles(node, []);
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    const ch = descendants.filter((p) => checked.has(p)).length;
+    cb.checked = descendants.length > 0 && ch === descendants.length;
+    cb.indeterminate = ch > 0 && ch < descendants.length;
+    cb.addEventListener('change', () => {
+      descendants.forEach((p) => (cb.checked ? checked.add(p) : checked.delete(p)));
+      render();
+    });
+
+    const icon = document.createElement('i');
+    icon.className = 'codicon ' + (isCollapsed ? 'codicon-folder' : 'codicon-folder-opened');
+    const name = document.createElement('span');
+    name.className = 'fname dir';
+    name.textContent = label;
+
+    row.append(chev, cb, icon, name);
+    const toggle = () => {
+      if (isCollapsed) collapsed.delete(key);
+      else collapsed.add(key);
+      render();
+    };
+    chev.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle();
+    });
+    row.addEventListener('click', (e) => {
+      if (e.target !== cb) toggle();
+    });
+    return row;
+  }
+
+  function fileRow(f, depth) {
+    const row = document.createElement('div');
+    row.className = 'tree-row';
+    row.style.paddingLeft = indent(depth);
+    row.title = f.statusLabel + ': ' + f.path;
+
+    const sp = document.createElement('span');
+    sp.className = 'chev-spacer';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = checked.has(f.path);
+    cb.addEventListener('change', () => {
+      if (cb.checked) checked.add(f.path);
+      else checked.delete(f.path);
+      render();
+    });
+
+    const icon = document.createElement('i');
+    icon.className = 'codicon codicon-file';
+
+    const fname = document.createElement('span');
+    fname.className = 'fname ' + cls(f.letter) + (f.deleted ? ' deleted' : '');
+    fname.textContent = baseName(f.path);
+
+    row.append(sp, cb, icon, fname);
+    row.addEventListener('click', (e) => {
+      if (e.target === cb) return;
+      vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
+    });
+    row.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showCtx(e, [
+        { label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) },
+        { label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) },
+        { label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) },
+        { label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) },
+      ]);
+    });
+    return row;
   }
 
   function changelistNode(cl) {
@@ -167,18 +300,18 @@
     cb.checked = cl.files.length > 0 && checkedCount === cl.files.length;
     cb.indeterminate = checkedCount > 0 && checkedCount < cl.files.length;
     cb.addEventListener('change', () => {
-      cl.files.forEach((f) => {
-        if (cb.checked) checked.add(f.path);
-        else checked.delete(f.path);
-      });
+      cl.files.forEach((f) => (cb.checked ? checked.add(f.path) : checked.delete(f.path)));
       render();
     });
+
+    const icon = document.createElement('i');
+    icon.className = 'codicon codicon-checklist';
 
     const name = document.createElement('span');
     name.className = 'cl-name' + (cl.active ? ' active' : '');
     name.textContent = cl.name;
 
-    node.append(chev, cb, name);
+    node.append(chev, cb, icon, name);
     if (cl.active) {
       const badge = document.createElement('span');
       badge.className = 'badge';
@@ -190,6 +323,7 @@
     count.textContent = cl.files.length ? cl.files.length + ' file' + (cl.files.length > 1 ? 's' : '') : 'empty';
     node.append(count);
 
+    const items = () => cl.files.map((f) => ({ path: f.path, untracked: f.untracked }));
     node.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -197,53 +331,11 @@
         { label: 'Set Active Changelist', cmd: () => vscode.postMessage({ type: 'setActive', id: cl.id }) },
         { label: 'New Changelist...', cmd: () => vscode.postMessage({ type: 'newChangelist' }) },
         { label: 'Rename...', cmd: () => vscode.postMessage({ type: 'renameChangelist', id: cl.id }) },
+        { label: 'Shelve Changelist...', cmd: () => cl.files.length && vscode.postMessage({ type: 'shelve', items: items() }) },
         { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteChangelist', id: cl.id }) },
       ]);
     });
     return node;
-  }
-
-  function fileRow(f) {
-    const row = document.createElement('div');
-    row.className = 'file-row';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = checked.has(f.path);
-    cb.addEventListener('change', () => {
-      if (cb.checked) checked.add(f.path);
-      else checked.delete(f.path);
-      render();
-    });
-
-    const letter = document.createElement('span');
-    letter.className = 'letter ' + cls(f.letter);
-    letter.textContent = f.letter;
-    letter.title = f.statusLabel;
-
-    const fname = document.createElement('span');
-    fname.className = 'fname ' + cls(f.letter) + (f.deleted ? ' deleted' : '');
-    fname.textContent = baseName(f.path);
-
-    const dir = document.createElement('span');
-    dir.className = 'fdir';
-    dir.textContent = dirName(f.path);
-
-    row.append(cb, letter, fname, dir);
-    row.addEventListener('click', (e) => {
-      if (e.target === cb) return;
-      vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
-    });
-    row.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      showCtx(e, [
-        { label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) },
-        { label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) },
-        { label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) },
-      ]);
-    });
-    return row;
   }
 
   function updateCommitState() {
@@ -295,7 +387,7 @@
   // ---- Log: graph layout ----
   function computeGraph(commits) {
     const rows = [];
-    let lanes = []; // expected next hash per lane, or null
+    let lanes = [];
     let widest = 1;
     for (const c of commits) {
       const lanesIn = lanes.slice();
@@ -308,11 +400,9 @@
         }
       }
       while (lanesIn.length <= nodeLane) lanesIn.push(null);
-      // Close sibling lanes that were also heading to this commit (merge inbound).
       for (let i = 0; i < lanes.length; i++) {
         if (i !== nodeLane && lanes[i] === c.hash) lanes[i] = null;
       }
-      // Outgoing parents.
       if (c.parents.length === 0) {
         lanes[nodeLane] = null;
       } else {
@@ -329,7 +419,6 @@
           }
         }
       }
-      // Trim trailing null lanes to keep things tight.
       while (lanes.length && lanes[lanes.length - 1] === null) lanes.pop();
       const lanesOut = lanes.slice();
       widest = Math.max(widest, lanesIn.length, lanesOut.length, nodeLane + 1);
@@ -368,7 +457,6 @@
       svg.appendChild(el);
     };
 
-    // Upper half: incoming lines.
     for (let i = 0; i < r.lanesIn.length; i++) {
       const v = r.lanesIn[i];
       if (!v) continue;
@@ -376,12 +464,10 @@
       else if (v === r.hash) line(cx(i), 0, cx(r.lane), mid, laneColor(i));
       else line(cx(i), 0, cx(i), mid, laneColor(i));
     }
-    // Lower half: continuing lanes.
     for (let i = 0; i < r.lanesOut.length; i++) {
       if (!r.lanesOut[i]) continue;
       line(cx(i), mid, cx(i), ROW_H, laneColor(i));
     }
-    // Diagonals from this node to extra parents living in other lanes.
     for (let k = 1; k < r.parents.length; k++) {
       const pl = r.lanesOut.indexOf(r.parents[k]);
       if (pl >= 0 && pl !== r.lane) line(cx(r.lane), mid, cx(pl), ROW_H, laneColor(pl));
@@ -485,7 +571,9 @@
 
     const head = document.createElement('div');
     head.className = 'det-head';
-    head.textContent = commit ? commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16) : '';
+    head.textContent = commit
+      ? commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16)
+      : '';
     logDetails.appendChild(head);
 
     const hash = document.createElement('div');
@@ -504,14 +592,16 @@
     for (const f of d.files) {
       const fr = document.createElement('div');
       fr.className = 'det-file';
-      const letter = document.createElement('span');
       const code = f.status[0];
+      const icon = document.createElement('i');
+      icon.className = 'codicon codicon-file';
+      const letter = document.createElement('span');
       letter.className = 'letter ' + cls(code);
       letter.textContent = code;
       const name = document.createElement('span');
       name.className = cls(code);
       name.textContent = f.path;
-      fr.append(letter, name);
+      fr.append(letter, icon, name);
       fr.addEventListener('click', () => vscode.postMessage({ type: 'openRevDiff', hash: d.hash, parent, path: f.path }));
       files.appendChild(fr);
     }
@@ -530,7 +620,7 @@
     if (!shelfEntries.length) {
       const none = document.createElement('div');
       none.className = 'placeholder';
-      none.textContent = 'No shelved changes. Select files in Local Changes and click Shelve (⇩).';
+      none.textContent = 'No shelved changes. Select files in Local Changes and click Shelve.';
       shelfList.appendChild(none);
       return;
     }
@@ -548,16 +638,17 @@
         renderShelf();
       });
 
+      const icon = document.createElement('i');
+      icon.className = 'codicon codicon-archive';
       const name = document.createElement('span');
       name.className = 'cl-name';
       name.textContent = sh.name;
-
       const meta = document.createElement('span');
       meta.className = 'cl-count';
       meta.textContent =
         sh.files.length + ' file' + (sh.files.length > 1 ? 's' : '') + '  ' + (sh.date || '').slice(0, 16).replace('T', ' ');
 
-      node.append(chev, name, meta);
+      node.append(chev, icon, name, meta);
       node.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -571,14 +662,17 @@
       if (!shelfCollapsed.has(sh.id)) {
         for (const f of sh.files) {
           const row = document.createElement('div');
-          row.className = 'file-row';
+          row.className = 'tree-row';
+          row.style.paddingLeft = indent(1);
+          const fi = document.createElement('i');
+          fi.className = 'codicon codicon-file';
           const fname = document.createElement('span');
           fname.className = 'fname';
           fname.textContent = baseName(f);
           const dir = document.createElement('span');
           dir.className = 'fdir';
           dir.textContent = dirName(f);
-          row.append(fname, dir);
+          row.append(fi, fname, dir);
           shelfList.appendChild(row);
         }
       }
@@ -596,7 +690,6 @@
       msg.value = '';
       amend.checked = false;
       updateCommitState();
-      // The committed change will appear in the Log on next open/refresh.
       logLoaded = false;
     } else if (m.type === 'logData') {
       logCommits = m.commits || [];

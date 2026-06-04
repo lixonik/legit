@@ -142,7 +142,30 @@ body {
 .letter { width: 12px; flex: 0 0 auto; text-align: center; font-weight: 700; font-size: 11px; }
 .fname { flex: 0 0 auto; }
 .fname.deleted { text-decoration: line-through; }
-.fdir { color: var(--fg-dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.fdir { color: var(--fg-dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; margin-left: 6px; }
+
+/* Directory tree rows (Local Changes / Shelf) */
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  padding-right: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tree-row:hover { background: var(--hover); }
+.chev-spacer { width: 10px; flex: 0 0 auto; }
+.fname.dir { color: var(--fg); font-weight: normal; }
+
+/* Icons */
+.codicon { font-size: 14px; flex: 0 0 auto; }
+.tool .codicon { font-size: 16px; color: var(--fg); }
+.codicon-folder, .codicon-folder-opened { color: #b3ae60; }
+.codicon-file { color: #9aa0a6; }
+.codicon-checklist { color: #8a8a8a; }
+.cl-node .codicon-archive { color: #b3ae60; }
 
 .st-M, .st-R, .st-C { color: var(--st-mod); }
 .st-A { color: var(--st-add); }

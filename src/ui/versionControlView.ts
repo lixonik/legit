@@ -301,12 +301,16 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     const nonce = makeNonce();
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vcs.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vcs.js'));
-    const csp = `default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';`;
+    const codiconUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'codicons', 'codicon.css'),
+    );
+    const csp = `default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';`;
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
+<link href="${codiconUri}" rel="stylesheet" />
 <link href="${cssUri}" rel="stylesheet" />
 <title>legit</title>
 </head>
@@ -321,15 +325,15 @@ export class VersionControlView implements vscode.WebviewViewProvider {
 
   <div class="tabpanel active" data-tab="local">
     <div class="toolbar">
-      <button class="tool" id="tb-focus" title="Focus commit message">✓</button>
-      <button class="tool" id="tb-refresh" title="Refresh">⟳</button>
-      <button class="tool" id="tb-new" title="New changelist">＋</button>
+      <button class="tool" id="tb-focus" title="Focus commit message"><i class="codicon codicon-check"></i></button>
+      <button class="tool" id="tb-refresh" title="Refresh"><i class="codicon codicon-refresh"></i></button>
+      <button class="tool" id="tb-new" title="New changelist"><i class="codicon codicon-add"></i></button>
       <span class="sep"></span>
-      <button class="tool" id="tb-rollback" title="Rollback selected">↶</button>
-      <button class="tool" id="tb-shelve" title="Shelve selected">⇩</button>
+      <button class="tool" id="tb-rollback" title="Rollback selected"><i class="codicon codicon-discard"></i></button>
+      <button class="tool" id="tb-shelve" title="Shelve selected"><i class="codicon codicon-archive"></i></button>
       <span class="sep"></span>
-      <button class="tool" id="tb-expand" title="Expand all">⊞</button>
-      <button class="tool" id="tb-collapse" title="Collapse all">⊟</button>
+      <button class="tool" id="tb-expand" title="Expand all"><i class="codicon codicon-expand-all"></i></button>
+      <button class="tool" id="tb-collapse" title="Collapse all"><i class="codicon codicon-collapse-all"></i></button>
     </div>
     <div class="tree" id="tree"></div>
     <div class="commit-area">
@@ -347,7 +351,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   <div class="tabpanel" data-tab="log">
     <div class="log-toolbar">
       <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
-      <button class="tool" id="log-refresh" title="Refresh log">⟳</button>
+      <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>
     <div class="log-body">
       <div class="log-list" id="log-list"></div>
@@ -357,7 +361,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
 
   <div class="tabpanel" data-tab="shelf">
     <div class="toolbar">
-      <button class="tool" id="shelf-refresh" title="Refresh shelf">⟳</button>
+      <button class="tool" id="shelf-refresh" title="Refresh shelf"><i class="codicon codicon-refresh"></i></button>
     </div>
     <div class="tree" id="shelf-list"></div>
   </div>
