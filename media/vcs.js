@@ -5,6 +5,18 @@
   const known = new Set();
   const collapsed = new Set();
 
+  // Log state
+  let logCommits = [];
+  let graphRows = [];
+  let maxLanes = 1;
+  let logLoaded = false;
+  let selectedHash = null;
+  let detailsCache = {};
+
+  const LANE_COLORS = ['#5b9bd5', '#6a8759', '#cc7832', '#9876aa', '#c75450', '#4eade5', '#bbb529', '#499c54'];
+  const LANE_W = 14;
+  const ROW_H = 22;
+
   const $ = (id) => document.getElementById(id);
   const tree = $('tree');
   const msg = $('message');
@@ -14,6 +26,9 @@
   const branchLabel = $('branch');
   const selInfo = $('selinfo');
   const ctx = $('ctxmenu');
+  const logList = $('log-list');
+  const logDetails = $('log-details');
+  const logSearch = $('log-search');
 
   // Tabs
   document.querySelectorAll('.tab').forEach((t) => {
@@ -23,14 +38,21 @@
       document.querySelectorAll('.tabpanel').forEach((p) =>
         p.classList.toggle('active', p.getAttribute('data-tab') === tab),
       );
+      if (tab === 'log' && !logLoaded) {
+        logLoaded = true;
+        vscode.postMessage({ type: 'requestLog' });
+      }
     });
   });
 
-  // Toolbar
+  // Local Changes toolbar
   $('tb-focus').addEventListener('click', () => msg.focus());
   $('tb-refresh').addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
   $('tb-new').addEventListener('click', () => vscode.postMessage({ type: 'newChangelist' }));
-  $('tb-expand').addEventListener('click', () => { collapsed.clear(); render(); });
+  $('tb-expand').addEventListener('click', () => {
+    collapsed.clear();
+    render();
+  });
   $('tb-collapse').addEventListener('click', () => {
     state.changelists.forEach((c) => collapsed.add(c.id));
     render();
@@ -39,10 +61,13 @@
     const items = checkedItems();
     if (items.length) vscode.postMessage({ type: 'rollback', items });
   });
-
   commitBtn.addEventListener('click', () => doCommit(false));
   commitPushBtn.addEventListener('click', () => doCommit(true));
   msg.addEventListener('input', updateCommitState);
+
+  // Log toolbar
+  $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
+  logSearch.addEventListener('input', renderLog);
 
   function doCommit(push) {
     const all = allPaths();
@@ -95,6 +120,7 @@
   };
   const cls = (letter) => 'st-' + (letter === '?' ? 'Q' : letter);
 
+  // ---- Local Changes rendering ----
   function render() {
     branchLabel.textContent = state.branch ? '⎇ ' + state.branch : '';
     tree.innerHTML = '';
@@ -215,6 +241,7 @@
     commitPushBtn.disabled = !ok;
   }
 
+  // ---- Context menu ----
   function showCtx(e, items) {
     ctx.innerHTML = '';
     for (const it of items) {
@@ -239,6 +266,227 @@
   document.addEventListener('click', hideCtx);
   window.addEventListener('blur', hideCtx);
 
+  // ---- Log: graph layout ----
+  function computeGraph(commits) {
+    const rows = [];
+    let lanes = []; // expected next hash per lane, or null
+    let widest = 1;
+    for (const c of commits) {
+      const lanesIn = lanes.slice();
+      let nodeLane = lanes.indexOf(c.hash);
+      if (nodeLane === -1) {
+        nodeLane = lanes.indexOf(null);
+        if (nodeLane === -1) {
+          nodeLane = lanes.length;
+          lanes.push(null);
+        }
+      }
+      while (lanesIn.length <= nodeLane) lanesIn.push(null);
+      // Close sibling lanes that were also heading to this commit (merge inbound).
+      for (let i = 0; i < lanes.length; i++) {
+        if (i !== nodeLane && lanes[i] === c.hash) lanes[i] = null;
+      }
+      // Outgoing parents.
+      if (c.parents.length === 0) {
+        lanes[nodeLane] = null;
+      } else {
+        lanes[nodeLane] = c.parents[0];
+        for (let k = 1; k < c.parents.length; k++) {
+          let pl = lanes.indexOf(c.parents[k]);
+          if (pl === -1) {
+            pl = lanes.indexOf(null);
+            if (pl === -1) {
+              pl = lanes.length;
+              lanes.push(null);
+            }
+            lanes[pl] = c.parents[k];
+          }
+        }
+      }
+      // Trim trailing null lanes to keep things tight.
+      while (lanes.length && lanes[lanes.length - 1] === null) lanes.pop();
+      const lanesOut = lanes.slice();
+      widest = Math.max(widest, lanesIn.length, lanesOut.length, nodeLane + 1);
+      rows.push({ lane: nodeLane, lanesIn, lanesOut, parents: c.parents, hash: c.hash });
+    }
+    maxLanes = widest;
+    return rows;
+  }
+
+  const laneColor = (i) => LANE_COLORS[i % LANE_COLORS.length];
+  const cx = (i) => LANE_W / 2 + i * LANE_W;
+
+  function graphSvg(r) {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const w = Math.max(1, maxLanes) * LANE_W;
+    const mid = ROW_H / 2;
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'lg-graph');
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(ROW_H));
+
+    const line = (x1, y1, x2, y2, color) => {
+      const el = document.createElementNS(svgNS, x1 === x2 ? 'line' : 'path');
+      if (x1 === x2) {
+        el.setAttribute('x1', x1);
+        el.setAttribute('y1', y1);
+        el.setAttribute('x2', x2);
+        el.setAttribute('y2', y2);
+      } else {
+        const cy = (y1 + y2) / 2;
+        el.setAttribute('d', `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`);
+        el.setAttribute('fill', 'none');
+      }
+      el.setAttribute('stroke', color);
+      el.setAttribute('stroke-width', '1.6');
+      svg.appendChild(el);
+    };
+
+    // Upper half: incoming lines.
+    for (let i = 0; i < r.lanesIn.length; i++) {
+      const v = r.lanesIn[i];
+      if (!v) continue;
+      if (i === r.lane) line(cx(i), 0, cx(i), mid, laneColor(i));
+      else if (v === r.hash) line(cx(i), 0, cx(r.lane), mid, laneColor(i));
+      else line(cx(i), 0, cx(i), mid, laneColor(i));
+    }
+    // Lower half: continuing lanes.
+    for (let i = 0; i < r.lanesOut.length; i++) {
+      if (!r.lanesOut[i]) continue;
+      line(cx(i), mid, cx(i), ROW_H, laneColor(i));
+    }
+    // Diagonals from this node to extra parents living in other lanes.
+    for (let k = 1; k < r.parents.length; k++) {
+      const pl = r.lanesOut.indexOf(r.parents[k]);
+      if (pl >= 0 && pl !== r.lane) line(cx(r.lane), mid, cx(pl), ROW_H, laneColor(pl));
+    }
+
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', String(cx(r.lane)));
+    dot.setAttribute('cy', String(mid));
+    dot.setAttribute('r', '3.4');
+    dot.setAttribute('fill', laneColor(r.lane));
+    dot.setAttribute('stroke', '#2b2b2b');
+    dot.setAttribute('stroke-width', '1');
+    svg.appendChild(dot);
+    return svg;
+  }
+
+  // ---- Log rendering ----
+  function renderLog() {
+    const filter = logSearch.value.trim().toLowerCase();
+    logList.innerHTML = '';
+    for (let i = 0; i < logCommits.length; i++) {
+      const c = logCommits[i];
+      if (filter) {
+        const hay = (c.subject + ' ' + c.author + ' ' + c.hash).toLowerCase();
+        if (!hay.includes(filter)) continue;
+      }
+      logList.appendChild(logRow(c, graphRows[i], !filter));
+    }
+  }
+
+  function logRow(c, gr, withGraph) {
+    const row = document.createElement('div');
+    row.className = 'log-row' + (c.hash === selectedHash ? ' selected' : '');
+    if (withGraph && gr) {
+      row.appendChild(graphSvg(gr));
+    } else {
+      const spacer = document.createElement('span');
+      spacer.className = 'lg-graph';
+      spacer.style.width = '6px';
+      row.appendChild(spacer);
+    }
+
+    const subject = document.createElement('span');
+    subject.className = 'lg-subject';
+    for (const ref of c.refs) subject.appendChild(refChip(ref));
+    subject.appendChild(document.createTextNode(c.subject));
+    row.appendChild(subject);
+
+    const author = document.createElement('span');
+    author.className = 'lg-meta';
+    author.textContent = c.author;
+    row.appendChild(author);
+
+    const date = document.createElement('span');
+    date.className = 'lg-date';
+    date.textContent = (c.date || '').slice(0, 10);
+    row.appendChild(date);
+
+    row.addEventListener('click', () => {
+      selectedHash = c.hash;
+      document.querySelectorAll('.log-row').forEach((x) => x.classList.remove('selected'));
+      row.classList.add('selected');
+      if (detailsCache[c.hash]) renderDetails(detailsCache[c.hash]);
+      else {
+        logDetails.innerHTML = '<div class="placeholder">Loading...</div>';
+        vscode.postMessage({ type: 'commitDetails', hash: c.hash });
+      }
+    });
+    return row;
+  }
+
+  function refChip(ref) {
+    const chip = document.createElement('span');
+    let kind = 'local';
+    let text = ref;
+    if (ref === 'HEAD') kind = 'head';
+    else if (ref.startsWith('tag: ')) {
+      kind = 'tag';
+      text = ref.slice(5);
+    } else if (ref.indexOf('/') >= 0) kind = 'remote';
+    chip.className = 'ref ' + kind;
+    chip.textContent = text;
+    return chip;
+  }
+
+  function renderDetails(d) {
+    const commit = logCommits.find((c) => c.hash === d.hash);
+    logDetails.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'det-head';
+    head.textContent = commit ? commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16) : '';
+    logDetails.appendChild(head);
+
+    const hash = document.createElement('div');
+    hash.className = 'det-hash';
+    hash.textContent = d.hash;
+    logDetails.appendChild(hash);
+
+    const message = document.createElement('div');
+    message.className = 'det-msg';
+    message.textContent = d.body || (commit ? commit.subject : '');
+    logDetails.appendChild(message);
+
+    const files = document.createElement('div');
+    files.className = 'det-files';
+    const parent = commit && commit.parents.length ? commit.parents[0] : '';
+    for (const f of d.files) {
+      const fr = document.createElement('div');
+      fr.className = 'det-file';
+      const letter = document.createElement('span');
+      const code = f.status[0];
+      letter.className = 'letter ' + cls(code);
+      letter.textContent = code;
+      const name = document.createElement('span');
+      name.className = cls(code);
+      name.textContent = f.path;
+      fr.append(letter, name);
+      fr.addEventListener('click', () => vscode.postMessage({ type: 'openRevDiff', hash: d.hash, parent, path: f.path }));
+      files.appendChild(fr);
+    }
+    if (d.files.length === 0) {
+      const none = document.createElement('div');
+      none.className = 'placeholder';
+      none.textContent = 'No file changes (merge or empty commit).';
+      files.appendChild(none);
+    }
+    logDetails.appendChild(files);
+  }
+
+  // ---- Incoming messages ----
   window.addEventListener('message', (ev) => {
     const m = ev.data;
     if (m.type === 'state') {
@@ -249,6 +497,16 @@
       msg.value = '';
       amend.checked = false;
       updateCommitState();
+      // The committed change will appear in the Log on next open/refresh.
+      logLoaded = false;
+    } else if (m.type === 'logData') {
+      logCommits = m.commits || [];
+      detailsCache = {};
+      graphRows = computeGraph(logCommits);
+      renderLog();
+    } else if (m.type === 'commitDetailsData') {
+      detailsCache[m.hash] = m;
+      if (m.hash === selectedHash) renderDetails(m);
     }
   });
 

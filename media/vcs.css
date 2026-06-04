@@ -210,3 +210,47 @@ input[type="checkbox"] {
 }
 .ctx-item { padding: 5px 18px; cursor: pointer; white-space: nowrap; }
 .ctx-item:hover { background: var(--sel); color: #fff; }
+
+/* ---- Log tab ---- */
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.log-search {
+  flex: 1;
+  background: var(--input);
+  color: var(--fg);
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  padding: 3px 7px;
+  font-size: 12px;
+  outline: none;
+}
+.log-search:focus { border-color: var(--accent); }
+.log-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.log-list { flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--tree-bg); }
+.log-row { display: flex; align-items: center; height: 22px; padding-right: 10px; white-space: nowrap; cursor: pointer; }
+.log-row:hover { background: var(--hover); }
+.log-row.selected { background: var(--sel); }
+.log-row.selected .lg-meta, .log-row.selected .lg-date, .log-row.selected .lg-subject { color: #fff; }
+.lg-graph { flex: 0 0 auto; height: 22px; }
+.lg-subject { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
+.lg-meta { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.lg-date { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; width: 92px; text-align: right; }
+.ref { font-size: 10px; border-radius: 3px; padding: 0 5px; margin-right: 4px; }
+.ref.local { background: #4a6b3a; color: #dff0d8; }
+.ref.remote { background: #3a4a6b; color: #d8e0f0; }
+.ref.tag { background: #6b5d2a; color: #f0e8c8; }
+.ref.head { background: var(--accent); color: #fff; }
+.log-details { flex: 0 0 38%; overflow: auto; border-top: 1px solid var(--border); padding: 8px 10px; background: var(--bg); }
+.det-head { color: var(--fg); margin-bottom: 4px; }
+.det-hash { color: var(--fg-dim); font-family: "Consolas", monospace; font-size: 11px; }
+.det-msg { white-space: pre-wrap; color: var(--fg); margin: 6px 0; }
+.det-files { margin-top: 6px; }
+.det-file { display: flex; gap: 6px; padding: 1px 0; cursor: pointer; }
+.det-file:hover { filter: brightness(1.3); }

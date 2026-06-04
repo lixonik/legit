@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Repository } from '../model/repository';
 import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
-import { HEAD_SCHEME } from './quickDiff';
+import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
 
 interface CommitMsg {
   type: 'commit';
@@ -12,11 +12,13 @@ interface CommitMsg {
   push: boolean;
 }
 type Incoming =
-  | { type: 'ready' | 'refresh' | 'newChangelist' }
+  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
   | { type: 'openDiff'; path: string; untracked: boolean }
   | { type: 'rollback'; items: { path: string; untracked: boolean }[] }
+  | { type: 'commitDetails'; hash: string }
+  | { type: 'openRevDiff'; hash: string; parent: string; path: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -56,6 +58,22 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'refresh':
         await this.repo.refresh();
+        break;
+      case 'requestLog': {
+        const commits = await this.repo.git.log();
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        break;
+      }
+      case 'commitDetails': {
+        const [files, body] = await Promise.all([
+          this.repo.git.commitFiles(m.hash),
+          this.repo.git.commitBody(m.hash),
+        ]);
+        this.view?.webview.postMessage({ type: 'commitDetailsData', hash: m.hash, files, body });
+        break;
+      }
+      case 'openRevDiff':
+        await this.openRevDiff(m.hash, m.parent, m.path);
         break;
       case 'newChangelist': {
         const name = await vscode.window.showInputBox({ prompt: 'New changelist name', placeHolder: 'Feature X' });
@@ -168,6 +186,14 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     await vscode.commands.executeCommand('vscode.diff', head, abs, `${name} (HEAD <-> Working Tree)`);
   }
 
+  private async openRevDiff(hash: string, parent: string, rel: string): Promise<void> {
+    const left = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + rel, query: parent });
+    const right = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + rel, query: hash });
+    const name = rel.split('/').pop() ?? rel;
+    const sh = (h: string) => (h ? h.slice(0, 7) : '∅');
+    await vscode.commands.executeCommand('vscode.diff', left, right, `${name} (${sh(parent)} <-> ${sh(hash)})`);
+  }
+
   private html(webview: vscode.Webview): string {
     const nonce = makeNonce();
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'vcs.css'));
@@ -189,6 +215,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     <div class="tab" data-tab="console">Console</div>
     <div class="branch" id="branch"></div>
   </div>
+
   <div class="tabpanel active" data-tab="local">
     <div class="toolbar">
       <button class="tool" id="tb-focus" title="Focus commit message">✓</button>
@@ -212,9 +239,21 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       </div>
     </div>
   </div>
-  <div class="tabpanel" data-tab="log"><div class="placeholder">Commit graph / Log: coming next.</div></div>
+
+  <div class="tabpanel" data-tab="log">
+    <div class="log-toolbar">
+      <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
+      <button class="tool" id="log-refresh" title="Refresh log">⟳</button>
+    </div>
+    <div class="log-body">
+      <div class="log-list" id="log-list"></div>
+      <div class="log-details" id="log-details"><div class="placeholder">Select a commit to see its details.</div></div>
+    </div>
+  </div>
+
   <div class="tabpanel" data-tab="shelf"><div class="placeholder">Shelf (shelved changes): coming soon.</div></div>
   <div class="tabpanel" data-tab="console"><div class="placeholder">Git console: coming soon.</div></div>
+
   <div class="ctx-menu" id="ctxmenu"></div>
   <script nonce="${nonce}" src="${jsUri}"></script>
 </body>

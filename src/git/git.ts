@@ -14,6 +14,22 @@ export interface FileChange {
   untracked: boolean;
 }
 
+export interface LogCommit {
+  hash: string;
+  parents: string[];
+  author: string;
+  email: string;
+  date: string;
+  subject: string;
+  refs: string[];
+}
+
+export interface CommitFile {
+  status: string;
+  path: string;
+  origPath?: string;
+}
+
 /** Thin wrapper over the git CLI, scoped to a single repository root. */
 export class Git {
   constructor(public readonly repoRoot: string) {}
@@ -92,6 +108,87 @@ export class Git {
       return false;
     }
   }
+
+  /** Commits across all refs, newest first, for the Log graph. */
+  async log(limit = 400): Promise<LogCommit[]> {
+    const FS = '\x1f';
+    const RS = '\x1e';
+    const fmt = ['%H', '%P', '%an', '%ae', '%cI', '%D', '%s'].join(FS) + RS;
+    let out = '';
+    try {
+      out = await this.raw(['log', '--all', `--max-count=${limit}`, '--date-order', `--pretty=format:${fmt}`]);
+    } catch {
+      return [];
+    }
+    const commits: LogCommit[] = [];
+    for (const rec of out.split(RS)) {
+      const line = rec.replace(/^\s+/, '');
+      if (!line) continue;
+      const [hash, parents, author, email, date, refs, subject] = line.split(FS);
+      commits.push({
+        hash,
+        parents: parents ? parents.split(' ').filter(Boolean) : [],
+        author,
+        email,
+        date,
+        subject: subject ?? '',
+        refs: parseRefs(refs ?? ''),
+      });
+    }
+    return commits;
+  }
+
+  /** Files changed by a commit, compared with its first parent. */
+  async commitFiles(hash: string): Promise<CommitFile[]> {
+    let out = '';
+    try {
+      out = await this.raw(['diff-tree', '--no-commit-id', '-r', '-z', '--name-status', hash]);
+    } catch {
+      return [];
+    }
+    const tokens = out.split('\0');
+    const files: CommitFile[] = [];
+    let i = 0;
+    while (i < tokens.length) {
+      const status = tokens[i];
+      if (!status) {
+        i++;
+        continue;
+      }
+      const code = status[0];
+      if (code === 'R' || code === 'C') {
+        const from = tokens[i + 1];
+        const to = tokens[i + 2];
+        if (to === undefined) break;
+        files.push({ status: code, path: normalize(to), origPath: normalize(from) });
+        i += 3;
+      } else {
+        const p = tokens[i + 1];
+        if (p === undefined) break;
+        files.push({ status: code, path: normalize(p) });
+        i += 2;
+      }
+    }
+    return files;
+  }
+
+  async commitBody(hash: string): Promise<string> {
+    try {
+      return (await this.raw(['show', '-s', '--format=%B', hash])).replace(/\s+$/, '');
+    } catch {
+      return '';
+    }
+  }
+
+  /** Contents of a path at an arbitrary revision (empty if absent). */
+  async showRev(rev: string, relPath: string): Promise<string> {
+    if (!rev) return '';
+    try {
+      return await this.raw(['show', `${rev}:${relPath}`]);
+    } catch {
+      return '';
+    }
+  }
 }
 
 function normalize(p: string): string {
@@ -124,4 +221,13 @@ function parseStatus(out: string): FileChange[] {
     });
   }
   return result;
+}
+
+function parseRefs(s: string): string[] {
+  if (!s) return [];
+  return s
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => (x.startsWith('HEAD -> ') ? x.slice('HEAD -> '.length) : x));
 }
