@@ -354,7 +354,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>
     <div class="log-body">
-      <div class="log-list" id="log-list"></div>
+      <div class="log-left">
+        <div class="log-header"><span class="lh-graph"></span><span class="lh-subject">Subject</span><span class="lh-author">Author</span><span class="lh-date">Date</span></div>
+        <div class="log-list" id="log-list"></div>
+      </div>
       <div class="log-details" id="log-details"><div class="placeholder">Select a commit to see its details.</div></div>
     </div>
   </div>
