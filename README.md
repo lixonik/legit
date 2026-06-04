@@ -1,42 +1,44 @@
 # legit – JetBrains-style Git for VS Code
 
-A VS Code extension that brings the parts of the JetBrains (WebStorm / IntelliJ)
-Git workflow that VS Code doesn't have natively – starting with **changelists**.
+A VS Code extension that recreates the JetBrains (WebStorm / IntelliJ) Git
+workflow and UI, for people migrating off the JetBrains IDEs. Standalone: it does
+not depend on GitLens or the built-in SCM view for its UI.
 
-> Status: early. Phase 1 (changelists + commit/push) is implemented; shelve, the
-> commit-graph log, the branches popup and the rest of the parity work are on the
-> roadmap below.
+> Status: early but usable. The Version Control tool window with the **Local
+> Changes** tab (changelists + commit/push) is implemented; Log graph, Shelf and
+> the rest of the parity work are on the roadmap below.
 
-## Why
+## The idea
 
-VS Code's built-in Git and extensions like GitLens already cover diffs, blame,
-the commit graph and conflict resolution well. What they *don't* replicate is the
-signature JetBrains workflow:
+VS Code's native SCM view does not look or feel like the JetBrains Version Control
+tool window. `legit` rebuilds that experience as a dedicated **bottom panel** with
+tabs (Local Changes / Log / Shelf / Console), a Darcula-styled changelist tree
+with checkboxes, and an embedded commit box, the way IntelliJ classic UI does it.
 
-- **Changelists** – named groups of uncommitted changes. No native VS Code equivalent.
-- **Shelve / Unshelve** – smarter than `git stash` (per-file, browsable, survives branch switches).
-- A **unified commit panel** – tree of changes grouped by changelist, partial (per-hunk) commit, amend, Commit & Push.
+## What works now
 
-`legit` builds these from scratch as a standalone extension.
-
-## What works now (Phase 1)
-
-- A dedicated **legit** source control provider in the SCM view.
-- **Changelists** as resource groups: create, rename, delete, set active, move files between them.
-- The **active** changelist (marked `✓`) collects every change not explicitly assigned elsewhere – like JetBrains' default *Changes* list.
-- **Commit** a changelist (stages and commits exactly its files via a pathspec commit, so nothing else sneaks in) and **Commit & Push**.
-- Click a file to open a **HEAD ↔ working tree diff**.
+- A dedicated **legit** panel in the bottom tool-window area (Darcula styling).
+- **Local Changes** tab: changelists rendered as a tree, each with a tri-state
+  checkbox, the active list marked with an *Active* badge, files colored by status
+  (modified / added / deleted / unversioned / conflict) with the dimmed path.
+- **Changelists**: create, rename, delete, set active, move files between lists
+  (toolbar + right-click context menus).
+- **Commit** the checked files with a message, plus **Commit and Push** and an
+  **Amend** option. Commits use a pathspec so only the checked files are recorded.
+- **Rollback** selected files (discards local changes; deletes unversioned files).
+- Click a file to open a **HEAD <-> working tree** diff; change bars appear in the
+  editor gutter.
 
 ## Roadmap
 
-1. ✅ Scaffold + git CLI wrapper
-2. ✅ Changelists (model, SCM groups, commands)
-3. ✅ Commit & Push from a changelist
-4. ⏳ Diff & per-hunk partial commit
-5. ⏳ Shelve / Unshelve
-6. ⏳ Commit graph / Git Log (webview)
-7. ⏳ Branches popup
-8. ⏳ Parity tail: conflict resolver, blame/annotate, interactive rebase, push dialog
+1. Scaffold + git CLI wrapper – done
+2. Changelists model – done
+3. Commit and Push – done
+4. JetBrains-style webview tool window (Local Changes) – done
+5. Log / commit graph tab – next
+6. Shelf (shelve / unshelve) tab
+7. Branches popup
+8. Diff polish, per-hunk partial commit, interactive rebase, conflict resolver, blame
 
 ## Development
 
@@ -48,7 +50,8 @@ npm run typecheck      # tsc --noEmit
 ```
 
 Press **F5** in VS Code (with this folder open) to launch an Extension Development
-Host with `legit` loaded, then open any git repository to see the SCM provider.
+Host with `legit` loaded, then open any git repository. The **legit** panel appears
+in the bottom tool-window area (View > Appearance > Panel, or Ctrl+J if hidden).
 
 ## License
 
