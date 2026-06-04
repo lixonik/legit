@@ -38,6 +38,7 @@ export class Repository implements vscode.Disposable {
   readonly onDidChange = this._onDidChange.event;
   private changes: FileChange[] = [];
   private _branch = '';
+  private _sync: { ahead: number; behind: number } | null = null;
   private readonly disposables: vscode.Disposable[] = [];
   private timer?: ReturnType<typeof setTimeout>;
 
@@ -59,6 +60,10 @@ export class Repository implements vscode.Disposable {
     return this._branch;
   }
 
+  get sync(): { ahead: number; behind: number } | null {
+    return this._sync;
+  }
+
   scheduleRefresh(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => void this.refresh(), 350);
@@ -68,6 +73,7 @@ export class Repository implements vscode.Disposable {
     const [changes, branch] = await Promise.all([this.git.status(), this.git.currentBranch()]);
     this.changes = changes;
     this._branch = branch;
+    this._sync = await this.git.aheadBehind();
     await this.store.reconcile(new Set(changes.map((c) => c.path)));
     this._onDidChange.fire();
   }

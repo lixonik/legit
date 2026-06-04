@@ -7,6 +7,7 @@ import { Repository } from './model/repository';
 import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
+import { pushFlow, updateFlow } from './ui/remoteOps';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const folder = vscode.workspace.workspaceFolders?.[0];
@@ -35,7 +36,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   branchItem.tooltip = 'legit: Git branches';
   context.subscriptions.push(branchItem);
   const updateBranch = () => {
-    branchItem.text = repo.branch ? `$(git-branch) ${repo.branch}` : '$(git-branch) legit';
+    const s = repo.sync;
+    const ab = s && (s.ahead || s.behind) ? `  $(arrow-down)${s.behind} $(arrow-up)${s.ahead}` : '';
+    branchItem.text = repo.branch ? `$(git-branch) ${repo.branch}${ab}` : '$(git-branch) legit';
     branchItem.show();
   };
   context.subscriptions.push(repo.onDidChange(updateBranch));
@@ -49,6 +52,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (name) await repo.newChangelist(name.trim());
   });
   reg('legit.branches', () => showBranches(repo));
+  reg('legit.push', () => pushFlow(repo));
+  reg('legit.update', () => updateFlow(repo));
   reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 
   await repo.refresh();

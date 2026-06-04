@@ -248,6 +248,34 @@ export class Git {
   async applyPatch(patchPath: string): Promise<void> {
     await this.raw(['apply', '--whitespace=nowarn', patchPath]);
   }
+
+  async fetch(): Promise<void> {
+    await this.raw(['fetch', '--prune']);
+  }
+  async pull(rebase: boolean): Promise<void> {
+    await this.raw(['pull', rebase ? '--rebase' : '--no-rebase']);
+  }
+  async pushSetUpstream(): Promise<void> {
+    const b = await this.currentBranch();
+    await this.raw(['push', '--set-upstream', 'origin', b]);
+  }
+  async aheadBehind(): Promise<{ ahead: number; behind: number } | null> {
+    try {
+      const out = await this.raw(['rev-list', '--left-right', '--count', '@{u}...HEAD']);
+      const parts = out.trim().split(/\s+/).map((n) => parseInt(n, 10));
+      return { behind: parts[0] || 0, ahead: parts[1] || 0 };
+    } catch {
+      return null;
+    }
+  }
+  async outgoingSubjects(): Promise<string[]> {
+    try {
+      const out = await this.raw(['log', '--format=%h %s', '@{u}..HEAD']);
+      return out.split('\n').map((s) => s.trim()).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
 }
 
 function normalize(p: string): string {

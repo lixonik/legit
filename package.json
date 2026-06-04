@@ -61,6 +61,18 @@
         "title": "Branches...",
         "category": "legit",
         "icon": "$(git-branch)"
+      },
+      {
+        "command": "legit.update",
+        "title": "Update Project (Pull)",
+        "category": "legit",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "legit.push",
+        "title": "Push...",
+        "category": "legit",
+        "icon": "$(repo-push)"
       }
     ],
     "menus": {
@@ -79,6 +91,16 @@
           "command": "legit.refresh",
           "when": "view == legit.versionControl",
           "group": "navigation@3"
+        },
+        {
+          "command": "legit.update",
+          "when": "view == legit.versionControl",
+          "group": "navigation@4"
+        },
+        {
+          "command": "legit.push",
+          "when": "view == legit.versionControl",
+          "group": "navigation@5"
         }
       ]
     }
