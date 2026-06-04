@@ -19,6 +19,7 @@ type Incoming =
   | { type: 'rollback'; items: { path: string; untracked: boolean }[] }
   | { type: 'commitDetails'; hash: string }
   | { type: 'openRevDiff'; hash: string; parent: string; path: string }
+  | { type: 'copyHash' | 'checkoutRev' | 'newBranchAt' | 'cherryPick' | 'revertCommit' | 'resetTo'; hash: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -78,6 +79,47 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'openRevDiff':
         await this.openRevDiff(m.hash, m.parent, m.path);
         break;
+      case 'copyHash':
+        await vscode.env.clipboard.writeText(m.hash);
+        vscode.window.showInformationMessage(`legit: copied ${m.hash.slice(0, 10)}`);
+        break;
+      case 'checkoutRev':
+        await this.runLogOp(() => this.repo.git.checkout(m.hash), `checked out ${m.hash.slice(0, 7)} (detached)`);
+        break;
+      case 'newBranchAt': {
+        const name = await vscode.window.showInputBox({ prompt: `New branch at ${m.hash.slice(0, 7)}`, placeHolder: 'feature/x' });
+        if (!name) break;
+        await this.runLogOp(() => this.repo.git.checkoutNew(name.trim(), m.hash), `created ${name.trim()}`);
+        break;
+      }
+      case 'cherryPick':
+        await this.runLogOp(() => this.repo.git.cherryPick(m.hash), `cherry-picked ${m.hash.slice(0, 7)}`);
+        break;
+      case 'revertCommit':
+        await this.runLogOp(() => this.repo.git.revert(m.hash), `reverted ${m.hash.slice(0, 7)}`);
+        break;
+      case 'resetTo': {
+        type ModeItem = vscode.QuickPickItem & { mode: 'soft' | 'mixed' | 'hard' };
+        const items: ModeItem[] = [
+          { label: 'Soft', description: 'keep all changes staged', mode: 'soft' },
+          { label: 'Mixed', description: 'keep changes, unstaged', mode: 'mixed' },
+          { label: 'Hard', description: 'discard all local changes', mode: 'hard' },
+        ];
+        const choice = await vscode.window.showQuickPick(items, {
+          placeHolder: `Reset ${this.repo.branch} to ${m.hash.slice(0, 7)}`,
+        });
+        if (!choice) break;
+        if (choice.mode === 'hard') {
+          const ok = await vscode.window.showWarningMessage(
+            'Hard reset will discard local changes. Continue?',
+            { modal: true },
+            'Reset',
+          );
+          if (ok !== 'Reset') break;
+        }
+        await this.runLogOp(() => this.repo.git.reset(m.hash, choice.mode), `reset to ${m.hash.slice(0, 7)}`);
+        break;
+      }
       case 'newChangelist': {
         const name = await vscode.window.showInputBox({ prompt: 'New changelist name', placeHolder: 'Feature X' });
         if (name) await this.repo.newChangelist(name.trim());
@@ -195,6 +237,20 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     const name = rel.split('/').pop() ?? rel;
     const sh = (h: string) => (h ? h.slice(0, 7) : '∅');
     await vscode.commands.executeCommand('vscode.diff', left, right, `${name} (${sh(parent)} <-> ${sh(hash)})`);
+  }
+
+  /** Run a Log action, report it, then refresh both the working tree and the log. */
+  private async runLogOp(op: () => Promise<void>, ok: string): Promise<void> {
+    try {
+      await op();
+      vscode.window.showInformationMessage(`legit: ${ok}.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await this.repo.refresh();
+      const commits = await this.repo.git.log();
+      this.view?.webview.postMessage({ type: 'logData', commits });
+    }
   }
 
   private html(webview: vscode.Webview): string {

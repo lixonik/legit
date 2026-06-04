@@ -223,6 +223,16 @@ export class Git {
   async renameBranch(oldName: string, newName: string): Promise<void> {
     await this.raw(['branch', '-m', oldName, newName]);
   }
+
+  async cherryPick(hash: string): Promise<void> {
+    await this.raw(['cherry-pick', hash]);
+  }
+  async revert(hash: string): Promise<void> {
+    await this.raw(['revert', '--no-edit', hash]);
+  }
+  async reset(hash: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
+    await this.raw(['reset', `--${mode}`, hash]);
+  }
 }
 
 function normalize(p: string): string {

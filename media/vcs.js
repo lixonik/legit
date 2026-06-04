@@ -269,6 +269,18 @@
   document.addEventListener('click', hideCtx);
   window.addEventListener('blur', hideCtx);
 
+  // Suppress the native browser context menu everywhere except text fields, so our
+  // custom menus are the only ones that appear (like a desktop IDE).
+  document.addEventListener(
+    'contextmenu',
+    (e) => {
+      const t = e.target;
+      if (t && t.closest && t.closest('input, textarea')) return;
+      e.preventDefault();
+    },
+    true,
+  );
+
   // ---- Log: graph layout ----
   function computeGraph(commits) {
     const rows = [];
@@ -426,6 +438,18 @@
         logDetails.innerHTML = '<div class="placeholder">Loading...</div>';
         vscode.postMessage({ type: 'commitDetails', hash: c.hash });
       }
+    });
+    row.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showCtx(e, [
+        { label: 'Checkout Revision', cmd: () => vscode.postMessage({ type: 'checkoutRev', hash: c.hash }) },
+        { label: 'New Branch from Here...', cmd: () => vscode.postMessage({ type: 'newBranchAt', hash: c.hash }) },
+        { label: 'Cherry-Pick', cmd: () => vscode.postMessage({ type: 'cherryPick', hash: c.hash }) },
+        { label: 'Revert Commit', cmd: () => vscode.postMessage({ type: 'revertCommit', hash: c.hash }) },
+        { label: 'Reset Current Branch to Here...', cmd: () => vscode.postMessage({ type: 'resetTo', hash: c.hash }) },
+        { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
+      ]);
     });
     return row;
   }
