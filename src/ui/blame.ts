@@ -1,0 +1,71 @@
+import * as vscode from 'vscode';
+import { Repository } from '../model/repository';
+
+/** Toggleable per-line git blame annotation in the editor, like JetBrains Annotate. */
+export class BlameController implements vscode.Disposable {
+  private readonly deco = vscode.window.createTextEditorDecorationType({
+    before: {
+      color: new vscode.ThemeColor('editorCodeLens.foreground'),
+      margin: '0 1.5em 0 0',
+    },
+  });
+  private readonly annotated = new Set<string>();
+  private readonly disposables: vscode.Disposable[] = [];
+
+  constructor(private readonly repo: Repository) {
+    this.disposables.push(
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        if (this.annotated.has(e.document.uri.toString())) this.clear(e.document.uri);
+      }),
+    );
+  }
+
+  async toggle(editor?: vscode.TextEditor): Promise<void> {
+    const ed = editor ?? vscode.window.activeTextEditor;
+    if (!ed || ed.document.uri.scheme !== 'file') return;
+    const key = ed.document.uri.toString();
+    if (this.annotated.has(key)) {
+      ed.setDecorations(this.deco, []);
+      this.annotated.delete(key);
+      return;
+    }
+    const rel = this.repo.relPathOf(ed.document.uri);
+    if (rel.startsWith('..')) {
+      vscode.window.showInformationMessage('legit: file is outside the repository.');
+      return;
+    }
+    const blame = await this.repo.git.blame(rel);
+    if (!blame.length) {
+      vscode.window.showInformationMessage('legit: no blame information (file may be untracked).');
+      return;
+    }
+    const lineCount = Math.min(ed.document.lineCount, blame.length);
+    const options: vscode.DecorationOptions[] = [];
+    for (let i = 0; i < lineCount; i++) {
+      const b = blame[i];
+      if (!b) continue;
+      options.push({
+        range: new vscode.Range(i, 0, i, 0),
+        renderOptions: { before: { contentText: `${b.date} ${shorten(b.author, 16)}` } },
+        hoverMessage: `${b.hash} · ${b.author} · ${b.date}`,
+      });
+    }
+    ed.setDecorations(this.deco, options);
+    this.annotated.add(key);
+  }
+
+  private clear(uri: vscode.Uri): void {
+    const ed = vscode.window.visibleTextEditors.find((e) => e.document.uri.toString() === uri.toString());
+    if (ed) ed.setDecorations(this.deco, []);
+    this.annotated.delete(uri.toString());
+  }
+
+  dispose(): void {
+    this.deco.dispose();
+    this.disposables.forEach((d) => d.dispose());
+  }
+}
+
+function shorten(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}

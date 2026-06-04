@@ -8,6 +8,7 @@ import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { pushFlow, updateFlow } from './ui/remoteOps';
+import { BlameController } from './ui/blame';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const folder = vscode.workspace.workspaceFolders?.[0];
@@ -54,6 +55,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   reg('legit.branches', () => showBranches(repo));
   reg('legit.push', () => pushFlow(repo));
   reg('legit.update', () => updateFlow(repo));
+
+  const blame = new BlameController(repo);
+  context.subscriptions.push(blame);
+  reg('legit.toggleBlame', () => blame.toggle());
+
   reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 
   await repo.refresh();

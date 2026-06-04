@@ -290,6 +290,32 @@ export class Git {
   async undoLastCommit(): Promise<void> {
     await this.raw(['reset', '--soft', 'HEAD~1']);
   }
+
+  async blame(relPath: string): Promise<{ hash: string; author: string; date: string }[]> {
+    let out = '';
+    try {
+      out = await this.raw(['blame', '--line-porcelain', '--', relPath]);
+    } catch {
+      return [];
+    }
+    const result: { hash: string; author: string; date: string }[] = [];
+    let hash = '';
+    let author = '';
+    let time = 0;
+    for (const line of out.split('\n')) {
+      if (/^[0-9a-f]{40} /.test(line)) {
+        hash = line.slice(0, 8);
+      } else if (line.startsWith('author ')) {
+        author = line.slice(7);
+      } else if (line.startsWith('author-time ')) {
+        time = parseInt(line.slice(12), 10) || 0;
+      } else if (line.startsWith('\t')) {
+        const date = time ? new Date(time * 1000).toISOString().slice(0, 10) : '';
+        result.push({ hash, author, date });
+      }
+    }
+    return result;
+  }
 }
 
 function normalize(p: string): string {

@@ -99,6 +99,10 @@ export class Repository implements vscode.Disposable {
     return vscode.Uri.file(path.join(this.git.repoRoot, rel));
   }
 
+  relPathOf(uri: vscode.Uri): string {
+    return path.relative(this.git.repoRoot, uri.fsPath).replace(/\\/g, '/');
+  }
+
   async newChangelist(name: string, activate = true) {
     const cl = await this.store.create(name);
     if (activate) await this.store.setActive(cl.id);

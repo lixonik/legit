@@ -73,6 +73,12 @@
         "title": "Push...",
         "category": "legit",
         "icon": "$(repo-push)"
+      },
+      {
+        "command": "legit.toggleBlame",
+        "title": "Annotate with Git Blame",
+        "category": "legit",
+        "icon": "$(git-commit)"
       }
     ],
     "menus": {
@@ -101,6 +107,13 @@
           "command": "legit.push",
           "when": "view == legit.versionControl",
           "group": "navigation@5"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "legit.toggleBlame",
+          "when": "resourceScheme == file",
+          "group": "navigation@9"
         }
       ]
     }
