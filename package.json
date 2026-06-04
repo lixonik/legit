@@ -1,0 +1,70 @@
+{
+  "name": "legit",
+  "displayName": "legit – JetBrains-style Git",
+  "description": "JetBrains-style Git workflow for VS Code: changelists, shelve, rich commit, log graph.",
+  "version": "0.0.1",
+  "publisher": "lixonik",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lixonik/legit.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "SCM Providers"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "legit.refresh", "title": "Refresh", "category": "legit", "icon": "$(refresh)" },
+      { "command": "legit.newChangelist", "title": "New Changelist…", "category": "legit", "icon": "$(add)" },
+      { "command": "legit.renameChangelist", "title": "Rename Changelist…", "category": "legit" },
+      { "command": "legit.deleteChangelist", "title": "Delete Changelist", "category": "legit", "icon": "$(trash)" },
+      { "command": "legit.setActiveChangelist", "title": "Set as Active Changelist", "category": "legit", "icon": "$(check)" },
+      { "command": "legit.moveToChangelist", "title": "Move to Changelist…", "category": "legit", "icon": "$(arrow-right)" },
+      { "command": "legit.commitChangelist", "title": "Commit", "category": "legit", "icon": "$(check)" },
+      { "command": "legit.commitAndPush", "title": "Commit and Push", "category": "legit", "icon": "$(repo-push)" }
+    ],
+    "menus": {
+      "scm/title": [
+        { "command": "legit.commitChangelist", "group": "navigation@1", "when": "scmProvider == legit" },
+        { "command": "legit.commitAndPush", "group": "navigation@2", "when": "scmProvider == legit" },
+        { "command": "legit.newChangelist", "group": "navigation@3", "when": "scmProvider == legit" },
+        { "command": "legit.refresh", "group": "navigation@4", "when": "scmProvider == legit" }
+      ],
+      "scm/resourceGroup/context": [
+        { "command": "legit.commitChangelist", "group": "inline@1", "when": "scmProvider == legit" },
+        { "command": "legit.setActiveChangelist", "group": "1_modification@1", "when": "scmProvider == legit" },
+        { "command": "legit.newChangelist", "group": "1_modification@2", "when": "scmProvider == legit" },
+        { "command": "legit.renameChangelist", "group": "1_modification@3", "when": "scmProvider == legit" },
+        { "command": "legit.deleteChangelist", "group": "1_modification@4", "when": "scmProvider == legit" }
+      ],
+      "scm/resourceState/context": [
+        { "command": "legit.moveToChangelist", "group": "inline@1", "when": "scmProvider == legit" }
+      ],
+      "commandPalette": [
+        { "command": "legit.renameChangelist", "when": "false" },
+        { "command": "legit.deleteChangelist", "when": "false" },
+        { "command": "legit.setActiveChangelist", "when": "false" },
+        { "command": "legit.moveToChangelist", "when": "false" }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}
