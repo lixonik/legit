@@ -7,6 +7,7 @@ import { Repository } from './model/repository';
 import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
+import { manageRemotes } from './ui/remotes';
 import { pushFlow, updateFlow } from './ui/remoteOps';
 import { stashChanges, unstash } from './ui/stash';
 import { BlameController } from './ui/blame';
@@ -55,6 +56,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (name) await repo.newChangelist(name.trim());
   });
   reg('jegit.branches', () => showBranches(repo));
+  reg('jegit.manageRemotes', () => manageRemotes(repo));
   reg('jegit.newTag', async () => {
     const name = await vscode.window.showInputBox({ prompt: 'New tag name', placeHolder: 'v1.0.0' });
     if (!name) return;
