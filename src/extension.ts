@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { Git } from './git/git';
 import { ChangelistStore } from './model/changelistStore';
 import { ShelfStore } from './model/shelfStore';
@@ -108,6 +110,40 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('jegit.push', () => pushFlow(repo));
   reg('jegit.update', () => updateFlow(repo));
+  reg('jegit.fetch', async () => {
+    try {
+      await git.fetch();
+      vscode.window.showInformationMessage('JeGit: fetched.');
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
+  reg('jegit.applyPatchClipboard', async () => {
+    const text = await vscode.env.clipboard.readText();
+    if (!text.trim()) {
+      vscode.window.showInformationMessage('JeGit: clipboard has no patch.');
+      return;
+    }
+    const tmp = path.join(os.tmpdir(), `jegit-clip-${Date.now()}.patch`);
+    try {
+      fs.writeFileSync(tmp, text, 'utf8');
+      await git.applyPatch(tmp);
+      vscode.window.showInformationMessage('JeGit: patch applied from clipboard.');
+      await repo.refresh();
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `JeGit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
+      );
+    } finally {
+      try {
+        fs.unlinkSync(tmp);
+      } catch {
+        /* ignore */
+      }
+    }
+  });
   reg('jegit.pushForce', async () => {
     if (!(await git.hasUpstream())) {
       vscode.window.showWarningMessage('JeGit: no upstream to push to.');

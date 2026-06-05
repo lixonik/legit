@@ -144,6 +144,18 @@
         "icon": "$(diff)"
       },
       {
+        "command": "jegit.applyPatchClipboard",
+        "title": "Apply Patch from Clipboard",
+        "category": "JeGit",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "jegit.fetch",
+        "title": "Fetch",
+        "category": "JeGit",
+        "icon": "$(sync)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",
