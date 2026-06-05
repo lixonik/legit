@@ -179,6 +179,7 @@ body {
 .codicon-file { color: #9aa0a6; }
 .codicon-checklist { color: #8a8a8a; }
 .cl-node .codicon-archive { color: #b3ae60; }
+.cl-node .codicon-question { color: var(--st-unv); }
 
 .st-M, .st-R, .st-C { color: var(--st-mod); }
 .st-A { color: var(--st-add); }

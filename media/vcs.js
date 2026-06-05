@@ -186,19 +186,75 @@
   function render() {
     branchLabel.textContent = state.branch ? '⎇ ' + state.branch : '';
     tree.innerHTML = '';
+    // JetBrains keeps unversioned (untracked) files in their own node instead of
+    // inside a changelist; collect them across changelists and render separately.
+    const unversioned = [];
     for (const cl of state.changelists) {
-      tree.appendChild(changelistNode(cl));
+      const tracked = [];
+      for (const f of cl.files) (f.untracked ? unversioned : tracked).push(f);
+      tree.appendChild(changelistNode(cl, tracked));
       if (!collapsed.has(cl.id)) {
         if (groupByDir) {
-          renderNode(buildTree(cl.files), cl, 1);
+          renderNode(buildTree(tracked), cl, 1);
         } else {
-          for (const f of cl.files.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+          for (const f of tracked.slice().sort((a, b) => a.path.localeCompare(b.path))) {
             tree.appendChild(fileRow(f, 1, true));
           }
         }
       }
     }
+    if (unversioned.length) renderUnversioned(unversioned);
     updateCommitState();
+  }
+
+  function renderUnversioned(files) {
+    const id = '__unversioned__';
+    const node = document.createElement('div');
+    node.className = 'cl-node';
+
+    const chev = document.createElement('span');
+    chev.className = 'chev' + (collapsed.has(id) ? ' collapsed' : '');
+    chev.textContent = '▾';
+    chev.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (collapsed.has(id)) collapsed.delete(id);
+      else collapsed.add(id);
+      render();
+    });
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    const checkedCount = files.filter((f) => checked.has(f.path)).length;
+    cb.checked = files.length > 0 && checkedCount === files.length;
+    cb.indeterminate = checkedCount > 0 && checkedCount < files.length;
+    cb.addEventListener('change', () => {
+      files.forEach((f) => (cb.checked ? checked.add(f.path) : checked.delete(f.path)));
+      render();
+    });
+
+    const icon = document.createElement('i');
+    icon.className = 'codicon codicon-question';
+
+    const name = document.createElement('span');
+    name.className = 'cl-name';
+    name.textContent = 'Unversioned Files';
+
+    const count = document.createElement('span');
+    count.className = 'cl-count';
+    count.textContent = files.length + ' file' + (files.length > 1 ? 's' : '');
+
+    node.append(chev, cb, icon, name, count);
+    tree.appendChild(node);
+
+    if (collapsed.has(id)) return;
+    const syntheticCl = { id };
+    if (groupByDir) {
+      renderNode(buildTree(files), syntheticCl, 1);
+    } else {
+      for (const f of files.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+        tree.appendChild(fileRow(f, 1, true));
+      }
+    }
   }
 
   function buildTree(files) {
@@ -367,7 +423,8 @@
     return row;
   }
 
-  function changelistNode(cl) {
+  function changelistNode(cl, files) {
+    files = files || cl.files;
     const node = document.createElement('div');
     node.className = 'cl-node';
 
@@ -383,11 +440,11 @@
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    const checkedCount = cl.files.filter((f) => checked.has(f.path)).length;
-    cb.checked = cl.files.length > 0 && checkedCount === cl.files.length;
-    cb.indeterminate = checkedCount > 0 && checkedCount < cl.files.length;
+    const checkedCount = files.filter((f) => checked.has(f.path)).length;
+    cb.checked = files.length > 0 && checkedCount === files.length;
+    cb.indeterminate = checkedCount > 0 && checkedCount < files.length;
     cb.addEventListener('change', () => {
-      cl.files.forEach((f) => (cb.checked ? checked.add(f.path) : checked.delete(f.path)));
+      files.forEach((f) => (cb.checked ? checked.add(f.path) : checked.delete(f.path)));
       render();
     });
 
@@ -407,10 +464,10 @@
     }
     const count = document.createElement('span');
     count.className = 'cl-count';
-    count.textContent = cl.files.length ? cl.files.length + ' file' + (cl.files.length > 1 ? 's' : '') : 'empty';
+    count.textContent = files.length ? files.length + ' file' + (files.length > 1 ? 's' : '') : 'empty';
     node.append(count);
 
-    const items = () => cl.files.map((f) => ({ path: f.path, untracked: f.untracked }));
+    const items = () => files.map((f) => ({ path: f.path, untracked: f.untracked }));
     node.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -418,8 +475,8 @@
         { label: 'Set Active Changelist', cmd: () => vscode.postMessage({ type: 'setActive', id: cl.id }) },
         { label: 'New Changelist...', cmd: () => vscode.postMessage({ type: 'newChangelist' }) },
         { label: 'Rename...', cmd: () => vscode.postMessage({ type: 'renameChangelist', id: cl.id }) },
-        { label: 'Shelve Changelist...', cmd: () => cl.files.length && vscode.postMessage({ type: 'shelve', items: items() }) },
-        { label: 'Create Patch...', cmd: () => cl.files.length && vscode.postMessage({ type: 'createPatch', items: items() }) },
+        { label: 'Shelve Changelist...', cmd: () => files.length && vscode.postMessage({ type: 'shelve', items: items() }) },
+        { label: 'Create Patch...', cmd: () => files.length && vscode.postMessage({ type: 'createPatch', items: items() }) },
         { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteChangelist', id: cl.id }) },
       ]);
     });
