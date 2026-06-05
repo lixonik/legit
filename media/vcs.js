@@ -80,6 +80,22 @@
     ui.tabOrder = [...document.querySelectorAll('.tabbar .tab')].map((t) => t.getAttribute('data-tab'));
     saveUi();
   }
+  // FLIP: animate tabs sliding to their new positions after a reorder.
+  function flipTabs(bar, doMove) {
+    const tabs = [...bar.querySelectorAll('.tab')];
+    const before = new Map(tabs.map((t) => [t, t.getBoundingClientRect().left]));
+    doMove();
+    tabs.forEach((t) => {
+      const dx = before.get(t) - t.getBoundingClientRect().left;
+      if (!dx) return;
+      t.style.transition = 'none';
+      t.style.transform = 'translateX(' + dx + 'px)';
+      requestAnimationFrame(() => {
+        t.style.transition = 'transform 0.18s ease';
+        t.style.transform = '';
+      });
+    });
+  }
   (function setupTabDnD() {
     const bar = document.querySelector('.tabbar');
     let dragged = null;
@@ -101,9 +117,11 @@
       t.addEventListener('drop', (e) => {
         e.preventDefault();
         if (!dragged || dragged === t) return;
-        const tabs = [...bar.querySelectorAll('.tab')];
-        if (tabs.indexOf(dragged) < tabs.indexOf(t)) t.after(dragged);
-        else t.before(dragged);
+        flipTabs(bar, () => {
+          const tabs = [...bar.querySelectorAll('.tab')];
+          if (tabs.indexOf(dragged) < tabs.indexOf(t)) t.after(dragged);
+          else t.before(dragged);
+        });
         saveTabOrder();
       });
     });
@@ -166,6 +184,9 @@
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
   $('log-branch').addEventListener('click', () => vscode.postMessage({ type: 'logBranchFilter' }));
   $('log-path').addEventListener('click', () => vscode.postMessage({ type: 'logPathFilter' }));
+  $('log-cherrypick').addEventListener('click', () => {
+    if (selectedHash) vscode.postMessage({ type: 'cherryPick', hash: selectedHash });
+  });
   logSearch.addEventListener('input', renderLog);
   logUser.addEventListener('change', renderLog);
   logDate.addEventListener('change', renderLog);
