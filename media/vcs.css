@@ -167,6 +167,8 @@ body {
   cursor: pointer;
 }
 .tree-row:hover { background: var(--hover); }
+.tree-row.selected { background: var(--sel); }
+.tree-row.selected .fname { color: #fff; }
 .chev-spacer { width: 10px; flex: 0 0 auto; }
 .fname.dir { color: var(--fg); font-weight: normal; }
 

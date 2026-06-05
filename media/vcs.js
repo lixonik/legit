@@ -6,6 +6,7 @@
   const collapsed = new Set();
   let groupByDir = true;
   let amendLoadedMsg = '';
+  let selectedPath = null;
 
   // Log state
   let logCommits = [];
@@ -280,6 +281,7 @@
     row.className = 'tree-row';
     row.style.paddingLeft = indent(depth);
     row.title = f.statusLabel + ': ' + f.path;
+    if (f.path === selectedPath) row.classList.add('selected');
 
     const sp = document.createElement('span');
     sp.className = 'chev-spacer';
@@ -309,6 +311,9 @@
     }
     row.addEventListener('click', (e) => {
       if (e.target === cb) return;
+      selectedPath = f.path;
+      document.querySelectorAll('.tree-row.selected').forEach((x) => x.classList.remove('selected'));
+      row.classList.add('selected');
       if (f.conflicted) vscode.postMessage({ type: 'mergeResolve', path: f.path });
       else vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
     });
