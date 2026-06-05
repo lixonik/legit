@@ -100,6 +100,12 @@ export class Git {
   async push(): Promise<string> {
     return this.raw(['push']);
   }
+  async pushForce(): Promise<void> {
+    await this.raw(['push', '--force-with-lease']);
+  }
+  async pushTags(): Promise<void> {
+    await this.raw(['push', '--tags']);
+  }
 
   /** Contents of a path at HEAD, or '' if it does not exist there (new file). */
   async showHead(relPath: string): Promise<string> {

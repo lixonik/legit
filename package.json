@@ -31,7 +31,7 @@
         "jegit.panel.autoReveal": {
           "type": "boolean",
           "default": true,
-          "description": "Reveal the jegit panel automatically when a git repository opens."
+          "description": "Reveal the JeGit panel automatically when a git repository opens."
         }
       }
     },
@@ -88,6 +88,18 @@
         "title": "Push...",
         "category": "JeGit",
         "icon": "$(repo-push)"
+      },
+      {
+        "command": "jegit.pushForce",
+        "title": "Force Push",
+        "category": "JeGit",
+        "icon": "$(repo-force-push)"
+      },
+      {
+        "command": "jegit.pushTags",
+        "title": "Push Tags",
+        "category": "JeGit",
+        "icon": "$(tag)"
       },
       {
         "command": "jegit.toggleBlame",

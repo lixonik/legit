@@ -69,6 +69,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('jegit.push', () => pushFlow(repo));
   reg('jegit.update', () => updateFlow(repo));
+  reg('jegit.pushForce', async () => {
+    if (!(await git.hasUpstream())) {
+      vscode.window.showWarningMessage('JeGit: no upstream to push to.');
+      return;
+    }
+    const ok = await vscode.window.showWarningMessage(
+      'Force push (--force-with-lease)? This overwrites the remote branch.',
+      { modal: true },
+      'Force Push',
+    );
+    if (ok !== 'Force Push') return;
+    try {
+      await git.pushForce();
+      vscode.window.showInformationMessage('JeGit: force-pushed.');
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
+  reg('jegit.pushTags', async () => {
+    try {
+      await git.pushTags();
+      vscode.window.showInformationMessage('JeGit: pushed tags.');
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
   reg('jegit.applyPatch', async () => {
     const uris = await vscode.window.showOpenDialog({
       canSelectMany: false,
