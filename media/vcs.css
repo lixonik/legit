@@ -353,6 +353,10 @@ input[type="checkbox"] {
 .log-row.selected { background: var(--sel); }
 .log-row.selected .lg-meta, .log-row.selected .lg-date, .log-row.selected .lg-subject { color: #fff; }
 .lg-graph { flex: 0 0 auto; height: 22px; }
+/* Blend the commit node outline with the row background in every state. */
+.lg-graph circle { stroke: var(--tree-bg); }
+.log-row:hover .lg-graph circle { stroke: var(--hover); }
+.log-row.selected .lg-graph circle { stroke: var(--sel); }
 .lg-subject { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
 .lg-meta { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 .lg-date { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; width: 92px; text-align: right; }
