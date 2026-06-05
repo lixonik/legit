@@ -1123,6 +1123,8 @@
       if (m.hash === selectedHash) renderDetails(m);
     } else if (m.type === 'branchData') {
       renderBranches(m);
+      const pathBtn = document.getElementById('log-path');
+      if (pathBtn) pathBtn.classList.toggle('active', !!(m.logPath && m.logPath.length));
     } else if (m.type === 'revealCommit') {
       revealCommit(m.hash || '');
     } else if (m.type === 'shelfData') {

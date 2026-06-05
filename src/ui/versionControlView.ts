@@ -124,6 +124,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         locals,
         remotes,
         scope: this.logScope,
+        logPath: this.logPath,
       });
     } catch {
       /* no branches yet (empty repo) */
@@ -267,6 +268,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
+        await this.postBranches();
         break;
       }
       case 'commitDetails': {
