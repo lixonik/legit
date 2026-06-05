@@ -988,6 +988,13 @@
         commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16);
       logDetails.appendChild(meta);
     }
+    if (commit && d.committer && d.committer.name && d.committer.name !== commit.author) {
+      const cm = document.createElement('div');
+      cm.className = 'det-meta';
+      cm.textContent =
+        'Committer: ' + d.committer.name + '  ' + (d.committer.date || '').replace('T', ' ').slice(0, 16);
+      logDetails.appendChild(cm);
+    }
     const hash = document.createElement('div');
     hash.className = 'det-hash';
     hash.textContent = (d.hash || '').slice(0, 12);

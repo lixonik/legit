@@ -208,6 +208,17 @@ export class Git {
     }
   }
 
+  /** Committer name and ISO date (shown in details when it differs from the author). */
+  async commitCommitter(hash: string): Promise<{ name: string; date: string }> {
+    try {
+      const out = await this.raw(['show', '-s', '--format=%cn%x1f%cI', hash]);
+      const [name, date] = out.trim().split('\x1f');
+      return { name: name ?? '', date: date ?? '' };
+    } catch {
+      return { name: '', date: '' };
+    }
+  }
+
   /** Contents of a path at an arbitrary revision (empty if absent). */
   async showRev(rev: string, relPath: string): Promise<string> {
     if (!rev) return '';

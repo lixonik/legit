@@ -122,7 +122,7 @@
           if (msg.type === 'ready') post({ type: 'state', payload: STATE });
           else if (msg.type === 'requestLog') { post({ type: 'logData', commits: LOG }); post({ type: 'branchData', current: BRANCHES.current, locals: BRANCHES.locals, remotes: BRANCHES.remotes, scope: BRANCHES.scope }); }
           else if (msg.type === 'setLogScope') { BRANCHES.scope = msg.scope; post({ type: 'logData', commits: LOG }); post({ type: 'branchData', current: BRANCHES.current, locals: BRANCHES.locals, remotes: BRANCHES.remotes, scope: BRANCHES.scope }); }
-          else if (msg.type === 'commitDetails') post({ type: 'commitDetailsData', hash: msg.hash, body: ((LOG.find(function (c) { return c.hash === msg.hash; }) || {}).subject || '') + '\n\nLonger body line explaining the change in more detail.', files: [
+          else if (msg.type === 'commitDetails') post({ type: 'commitDetailsData', hash: msg.hash, committer: { name: 'Release Bot', date: '2026-06-05T15:00:00' }, body: ((LOG.find(function (c) { return c.hash === msg.hash; }) || {}).subject || '') + '\n\nLonger body line explaining the change in more detail.', files: [
             { status: 'M', path: 'src/app/main.ts' }, { status: 'A', path: 'src/app/util/new.ts' }, { status: 'D', path: 'old/file.ts' },
           ] });
           else if (msg.type === 'requestShelf') post({ type: 'shelfData', entries: [
