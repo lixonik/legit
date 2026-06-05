@@ -6,3 +6,6 @@ tsconfig.json
 **/*.map
 .gitignore
 .github/**
+test/**
+vitest.config.*
+*.test.ts

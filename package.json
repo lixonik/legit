@@ -178,13 +178,15 @@
     "vscode:prepublish": "npm run compile",
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
     "@vscode/codicons": "^0.0.45",
     "esbuild": "^0.23.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.8"
   }
 }

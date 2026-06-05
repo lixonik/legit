@@ -8,6 +8,7 @@ import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
 import { showFileHistory } from './history';
 import { showRebaseDialog } from './rebaseDialog';
 import { showMergeResolver } from './mergeResolver';
+import { splitHunks } from '../util/diff';
 
 interface CommitMsg {
   type: 'commit';
@@ -655,27 +656,4 @@ function makeNonce(): string {
   let s = '';
   for (let i = 0; i < 24; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
   return s;
-}
-
-/** Split a unified diff into its file header and individual hunks. */
-function splitHunks(diff: string): { header: string; hunks: { header: string; lines: string[] }[] } {
-  const lines = diff.split('\n');
-  let i = 0;
-  const header: string[] = [];
-  while (i < lines.length && !lines[i].startsWith('@@')) {
-    header.push(lines[i]);
-    i++;
-  }
-  const hunks: { header: string; lines: string[] }[] = [];
-  let cur: { header: string; lines: string[] } | null = null;
-  for (; i < lines.length; i++) {
-    if (lines[i].startsWith('@@')) {
-      if (cur) hunks.push(cur);
-      cur = { header: lines[i], lines: [lines[i]] };
-    } else if (cur) {
-      cur.lines.push(lines[i]);
-    }
-  }
-  if (cur) hunks.push(cur);
-  return { header: header.join('\n'), hunks };
 }

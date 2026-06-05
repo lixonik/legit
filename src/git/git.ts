@@ -546,7 +546,7 @@ function normalize(p: string): string {
   return p.replace(/\\/g, '/');
 }
 
-function parseStatus(out: string): FileChange[] {
+export function parseStatus(out: string): FileChange[] {
   const result: FileChange[] = [];
   if (!out) return result;
   const tokens = out.split('\0');
@@ -574,7 +574,7 @@ function parseStatus(out: string): FileChange[] {
   return result;
 }
 
-function parseRefs(s: string): string[] {
+export function parseRefs(s: string): string[] {
   if (!s) return [];
   return s
     .split(',')
