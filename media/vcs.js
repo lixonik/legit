@@ -327,6 +327,9 @@
       menu.push({ label: 'Create Patch...', cmd: () => vscode.postMessage({ type: 'createPatch', items: [{ path: f.path, untracked: f.untracked }] }) });
       menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
       menu.push({ label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) });
+      if (f.untracked) {
+        menu.push({ label: 'Add to .gitignore', cmd: () => vscode.postMessage({ type: 'addToGitignore', path: f.path }) });
+      }
       menu.push({ label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) });
       showCtx(e, menu);
     });

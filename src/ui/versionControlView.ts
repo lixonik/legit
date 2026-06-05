@@ -59,6 +59,7 @@ type Incoming =
   | { type: 'openFile'; path: string }
   | { type: 'mergeResolve'; path: string }
   | { type: 'markResolved'; paths: string[] }
+  | { type: 'addToGitignore'; path: string }
   | { type: 'fileHistory'; path: string }
   | { type: 'tagAt'; hash: string }
   | { type: 'commitHunks'; path: string }
@@ -362,6 +363,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         await this.repo.git.add(m.paths);
         await this.repo.refresh();
         break;
+      case 'addToGitignore':
+        await this.addToGitignore(m.path);
+        break;
       case 'fileHistory':
         await showFileHistory(this.repo, m.path);
         break;
@@ -526,6 +530,27 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       await this.repo.refresh();
+    }
+  }
+
+  private async addToGitignore(rel: string): Promise<void> {
+    const gi = this.repo.absUri('.gitignore').fsPath;
+    try {
+      let cur = '';
+      try {
+        cur = fs.readFileSync(gi, 'utf8');
+      } catch {
+        /* no .gitignore yet */
+      }
+      const existing = cur.split('\n').map((s) => s.trim());
+      if (!existing.includes(rel)) {
+        const sep = cur && !cur.endsWith('\n') ? '\n' : '';
+        fs.appendFileSync(gi, sep + rel + '\n');
+      }
+      vscode.window.showInformationMessage(`JeGit: added ${rel} to .gitignore.`);
+      await this.repo.refresh();
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
