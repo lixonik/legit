@@ -15,7 +15,9 @@ interface CommitMsg {
   push: boolean;
 }
 type Incoming =
-  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'branches' | 'getLastCommitMessage' }
+  | {
+      type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'requestConsole' | 'branches' | 'getLastCommitMessage';
+    }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
   | { type: 'openDiff'; path: string; untracked: boolean }
@@ -39,12 +41,14 @@ type Incoming =
 export class VersionControlView implements vscode.WebviewViewProvider {
   static readonly viewId = 'legit.versionControl';
   private view?: vscode.WebviewView;
+  private readonly consoleLog: string[] = [];
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly repo: Repository,
   ) {
     this.repo.onDidChange(() => this.postState());
+    this.repo.git.commandLogger = (line) => this.pushConsole(line);
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
@@ -69,6 +73,13 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: 'shelfData', entries: this.repo.shelves() });
   }
 
+  private pushConsole(line: string): void {
+    const entry = `$ ${line}`;
+    this.consoleLog.push(entry);
+    if (this.consoleLog.length > 500) this.consoleLog.shift();
+    this.view?.webview.postMessage({ type: 'consoleLine', line: entry });
+  }
+
   private async onMessage(m: Incoming): Promise<void> {
     switch (m.type) {
       case 'ready':
@@ -82,6 +93,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'requestShelf':
         this.postShelf();
+        break;
+      case 'requestConsole':
+        this.view?.webview.postMessage({ type: 'consoleData', lines: this.consoleLog });
         break;
       case 'getLastCommitMessage': {
         const message = await this.repo.git.commitBody('HEAD');
@@ -482,7 +496,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     </div>
     <div class="tree" id="shelf-list"></div>
   </div>
-  <div class="tabpanel" data-tab="console"><div class="placeholder">Git console: coming soon.</div></div>
+  <div class="tabpanel" data-tab="console"><div class="console" id="console-log"></div></div>
 
   <div class="ctx-menu" id="ctxmenu"></div>
   <script nonce="${nonce}" src="${jsUri}"></script>

@@ -34,13 +34,22 @@ export interface CommitFile {
 export class Git {
   constructor(public readonly repoRoot: string) {}
 
+  /** Optional sink that receives each executed git command (for the Console tab). */
+  commandLogger?: (line: string) => void;
+
   async raw(args: string[]): Promise<string> {
-    const { stdout } = await execFileAsync('git', args, {
-      cwd: this.repoRoot,
-      maxBuffer: 64 * 1024 * 1024,
-      windowsHide: true,
-    });
-    return stdout;
+    try {
+      const { stdout } = await execFileAsync('git', args, {
+        cwd: this.repoRoot,
+        maxBuffer: 64 * 1024 * 1024,
+        windowsHide: true,
+      });
+      this.commandLogger?.(`git ${args.join(' ')}`);
+      return stdout;
+    } catch (e) {
+      this.commandLogger?.(`git ${args.join(' ')}  [failed]`);
+      throw e;
+    }
   }
 
   static async findRepoRoot(cwd: string): Promise<string | undefined> {

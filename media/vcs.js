@@ -36,6 +36,7 @@
   const logDetails = $('log-details');
   const logSearch = $('log-search');
   const shelfList = $('shelf-list');
+  const consoleLogEl = $('console-log');
 
   // Tabs
   document.querySelectorAll('.tab').forEach((t) => {
@@ -50,6 +51,7 @@
         vscode.postMessage({ type: 'requestLog' });
       }
       if (tab === 'shelf') vscode.postMessage({ type: 'requestShelf' });
+      if (tab === 'console') vscode.postMessage({ type: 'requestConsole' });
     });
   });
 
@@ -754,6 +756,12 @@
         msg.value = amendLoadedMsg;
         updateCommitState();
       }
+    } else if (m.type === 'consoleData') {
+      consoleLogEl.textContent = (m.lines || []).join('\n') + (m.lines && m.lines.length ? '\n' : '');
+      consoleLogEl.scrollTop = consoleLogEl.scrollHeight;
+    } else if (m.type === 'consoleLine') {
+      consoleLogEl.textContent += m.line + '\n';
+      consoleLogEl.scrollTop = consoleLogEl.scrollHeight;
     }
   });
 
