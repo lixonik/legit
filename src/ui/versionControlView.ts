@@ -13,6 +13,7 @@ interface CommitMsg {
   message: string;
   amend: boolean;
   push: boolean;
+  signoff: boolean;
 }
 type Incoming =
   | {
@@ -388,7 +389,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       return;
     }
     try {
-      await this.repo.commit(m.paths, m.message.trim(), { amend: m.amend, push: m.push });
+      await this.repo.commit(m.paths, m.message.trim(), { amend: m.amend, push: m.push, signoff: m.signoff });
       this.view?.webview.postMessage({ type: 'committed' });
       vscode.window.showInformationMessage(
         `legit: committed ${m.paths.length} file(s)${m.push ? ' and pushed' : ''}.`,
@@ -596,6 +597,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <textarea id="message" placeholder="Commit Message" rows="2"></textarea>
       <div class="commit-row">
         <label class="opt"><input type="checkbox" id="amend" /> Amend</label>
+        <label class="opt"><input type="checkbox" id="signoff" /> Sign-off</label>
         <span class="selinfo" id="selinfo"></span>
         <span class="spacer"></span>
         <button class="btn secondary" id="commit" disabled>Commit</button>

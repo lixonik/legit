@@ -27,6 +27,7 @@
   const tree = $('tree');
   const msg = $('message');
   const amend = $('amend');
+  const signoff = $('signoff');
   const commitBtn = $('commit');
   const commitPushBtn = $('commitPush');
   const branchLabel = $('branch');
@@ -111,7 +112,7 @@
   function doCommit(push) {
     const all = allPaths();
     const paths = [...checked].filter((p) => all.has(p));
-    vscode.postMessage({ type: 'commit', paths, message: msg.value, amend: amend.checked, push });
+    vscode.postMessage({ type: 'commit', paths, message: msg.value, amend: amend.checked, push, signoff: signoff.checked });
   }
 
   function allPaths() {
