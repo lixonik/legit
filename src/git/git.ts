@@ -294,6 +294,35 @@ export class Git {
     await this.raw(['apply', '--whitespace=nowarn', patchPath]);
   }
 
+  /**
+   * Apply a patch to the working tree, falling back to a 3-way merge when a
+   * straight apply fails (e.g. the tree has diverged from when it was created).
+   * A clean apply lands as unstaged working-tree changes; a 3-way merge leaves
+   * conflict markers and unmerged entries for the resolver. Returns 'clean' or
+   * 'conflicts'; throws only when the patch cannot be applied at all (so the
+   * caller can keep a shelf rather than lose it).
+   */
+  async applyPatch3way(patchPath: string): Promise<'clean' | 'conflicts'> {
+    try {
+      await this.raw(['apply', '--whitespace=nowarn', patchPath]);
+      return 'clean';
+    } catch {
+      /* straight apply failed -- fall back to a 3-way merge */
+    }
+    try {
+      await this.raw(['apply', '--3way', '--whitespace=nowarn', patchPath]);
+      return 'clean';
+    } catch (e) {
+      // --3way exits non-zero both when it applied with conflicts and when it
+      // failed outright; distinguish by checking for unmerged index entries.
+      const unmerged = await this.raw(['ls-files', '-u'])
+        .then((o) => o.trim().length > 0)
+        .catch(() => false);
+      if (unmerged) return 'conflicts';
+      throw e;
+    }
+  }
+
   async fetch(): Promise<void> {
     await this.raw(['fetch', '--prune']);
   }

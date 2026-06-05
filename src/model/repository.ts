@@ -165,13 +165,18 @@ export class Repository implements vscode.Disposable {
     await this.refresh();
   }
 
-  /** Re-apply a shelf to the working tree and drop it from the shelf. */
-  async unshelve(id: string): Promise<void> {
+  /**
+   * Re-apply a shelf to the working tree. On a clean apply the shelf is dropped;
+   * if the tree has diverged the patch is applied as a 3-way merge and the shelf
+   * is kept so nothing is lost while the conflicts are resolved.
+   */
+  async unshelve(id: string): Promise<'clean' | 'conflicts' | 'missing'> {
     const entry = this.shelf.get(id);
-    if (!entry) return;
-    await this.git.applyPatch(this.shelf.patchPath(id));
-    await this.shelf.remove(id);
+    if (!entry) return 'missing';
+    const result = await this.git.applyPatch3way(this.shelf.patchPath(id));
+    if (result === 'clean') await this.shelf.remove(id);
     await this.refresh();
+    return result;
   }
 
   async deleteShelf(id: string): Promise<void> {

@@ -157,9 +157,15 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'unshelve':
         try {
-          await this.repo.unshelve(m.id);
+          const res = await this.repo.unshelve(m.id);
           this.postShelf();
-          vscode.window.showInformationMessage('JeGit: unshelved.');
+          if (res === 'conflicts') {
+            vscode.window.showWarningMessage(
+              'JeGit: unshelved with conflicts -- resolve them, then commit. The shelf was kept.',
+            );
+          } else {
+            vscode.window.showInformationMessage('JeGit: unshelved.');
+          }
         } catch (err) {
           vscode.window.showErrorMessage(
             `JeGit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
