@@ -20,6 +20,7 @@ type Incoming =
     }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
+  | { type: 'assignTo'; paths: string[]; id: string }
   | { type: 'openDiff'; path: string; untracked: boolean }
   | { type: 'rollback'; items: { path: string; untracked: boolean }[] }
   | { type: 'commitDetails'; hash: string }
@@ -277,6 +278,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'move':
         await this.moveToChangelist(m.paths);
+        break;
+      case 'assignTo':
+        await this.repo.move(m.paths, m.id);
         break;
       case 'openDiff':
         await this.openDiff(m.path, m.untracked);

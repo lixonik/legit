@@ -323,6 +323,10 @@
       menu.push({ label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) });
       showCtx(e, menu);
     });
+    row.draggable = true;
+    row.addEventListener('dragstart', (e) => {
+      if (e.dataTransfer) e.dataTransfer.setData('text/plain', f.path);
+    });
     return row;
   }
 
@@ -381,6 +385,17 @@
         { label: 'Create Patch...', cmd: () => cl.files.length && vscode.postMessage({ type: 'createPatch', items: items() }) },
         { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteChangelist', id: cl.id }) },
       ]);
+    });
+    node.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      node.classList.add('drop-target');
+    });
+    node.addEventListener('dragleave', () => node.classList.remove('drop-target'));
+    node.addEventListener('drop', (e) => {
+      e.preventDefault();
+      node.classList.remove('drop-target');
+      const p = e.dataTransfer && e.dataTransfer.getData('text/plain');
+      if (p) vscode.postMessage({ type: 'assignTo', paths: [p], id: cl.id });
     });
     return node;
   }

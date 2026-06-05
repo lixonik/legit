@@ -116,6 +116,7 @@ body {
   cursor: default;
 }
 .cl-node:hover { background: var(--hover); }
+.cl-node.drop-target { background: rgba(74, 136, 199, 0.25); outline: 1px dashed var(--accent); }
 .chev {
   display: inline-block;
   width: 10px;
