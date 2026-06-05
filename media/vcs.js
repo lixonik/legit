@@ -1073,6 +1073,7 @@
         e.stopPropagation();
         showCtx(e, [
           { label: 'Unshelve (apply and remove)', cmd: () => vscode.postMessage({ type: 'unshelve', id: sh.id }) },
+          { label: 'Unshelve and Keep', cmd: () => vscode.postMessage({ type: 'unshelve', id: sh.id, keep: true }) },
           { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteShelf', id: sh.id }) },
         ]);
       });

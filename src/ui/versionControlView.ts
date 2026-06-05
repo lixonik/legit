@@ -60,7 +60,8 @@ type Incoming =
       hash: string;
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
-  | { type: 'unshelve' | 'deleteShelf'; id: string }
+  | { type: 'unshelve'; id: string; keep?: boolean }
+  | { type: 'deleteShelf'; id: string }
   | { type: 'openFile'; path: string }
   | { type: 'mergeResolve'; path: string }
   | { type: 'markResolved'; paths: string[] }
@@ -186,14 +187,14 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'unshelve':
         try {
-          const res = await this.repo.unshelve(m.id);
+          const res = await this.repo.unshelve(m.id, !!m.keep);
           this.postShelf();
           if (res === 'conflicts') {
             vscode.window.showWarningMessage(
               'JeGit: unshelved with conflicts -- resolve them, then commit. The shelf was kept.',
             );
           } else {
-            vscode.window.showInformationMessage('JeGit: unshelved.');
+            vscode.window.showInformationMessage(m.keep ? 'JeGit: unshelved (shelf kept).' : 'JeGit: unshelved.');
           }
         } catch (err) {
           vscode.window.showErrorMessage(
