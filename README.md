@@ -1,43 +1,53 @@
 # legit – JetBrains-style Git for VS Code
 
 A VS Code extension that recreates the JetBrains (WebStorm / IntelliJ) Git
-workflow and UI, for people migrating off the JetBrains IDEs. Standalone: it does
-not depend on GitLens or the built-in SCM view for its UI.
+workflow and UI, for people migrating off the JetBrains IDEs. It is standalone:
+it does not depend on GitLens or the built-in SCM view for its UI.
 
-> Status: early but usable. The Version Control tool window with the **Local
-> Changes** tab (changelists + commit/push) is implemented; Log graph, Shelf and
-> the rest of the parity work are on the roadmap below.
+The whole experience lives in a dedicated **legit** panel in the bottom
+tool-window area (like the JetBrains Version Control tool window), with a
+Darcula-styled, tabbed UI: **Local Changes / Log / Shelf / Console**.
 
-## The idea
+## Features
 
-VS Code's native SCM view does not look or feel like the JetBrains Version Control
-tool window. `legit` rebuilds that experience as a dedicated **bottom panel** with
-tabs (Local Changes / Log / Shelf / Console), a Darcula-styled changelist tree
-with checkboxes, and an embedded commit box, the way IntelliJ classic UI does it.
+### Local Changes
+- **Changelists** rendered as a directory tree (toggle to a flat list), each with
+  a tri-state checkbox; the active list carries an *Active* badge and collects
+  every change not explicitly assigned elsewhere.
+- Create / rename / delete / set-active changelists; move files between them.
+- Files are colored by status (modified / added / deleted / unversioned) with
+  real folder/file icons; **merge conflicts** are detected and can be opened in
+  VS Code's merge UI or marked resolved.
+- **Commit** the checked files, **Commit and Push**, and **Amend** (which prefills
+  the last message). Commits use a pathspec so only the checked files are recorded.
+- **Commit Selected Hunks**: pick individual hunks of a file to commit, leaving
+  the rest in the working tree.
+- **Rollback** and **Shelve** selected files; click a file for a HEAD diff.
+- Keyboard: `Ctrl+Enter` commits, `Ctrl+Shift+Enter` commits and pushes.
 
-## What works now
+### Log
+- Commit graph with colored branch lanes, ref chips (local / remote / tag / HEAD),
+  Subject / Author / Date columns, and a details panel on the right with the
+  commit message and changed files (click a file to diff it against its parent).
+- Filter by message / author / hash.
+- Commit context menu: Checkout, New Branch from Here, Cherry-Pick, Revert, Reset
+  (soft / mixed / hard), Edit Commit Message, Undo Commit, New Tag, Copy Revision.
 
-- A dedicated **legit** panel in the bottom tool-window area (Darcula styling).
-- **Local Changes** tab: changelists rendered as a tree, each with a tri-state
-  checkbox, the active list marked with an *Active* badge, files colored by status
-  (modified / added / deleted / unversioned / conflict) with the dimmed path.
-- **Changelists**: create, rename, delete, set active, move files between lists
-  (toolbar + right-click context menus).
-- **Commit** the checked files with a message, plus **Commit and Push** and an
-  **Amend** option. Commits use a pathspec so only the checked files are recorded.
-- **Rollback** selected files (discards local changes; deletes unversioned files).
-- Click a file to open a **HEAD <-> working tree** diff.
+### Shelf
+- Shelve changelists or files to a named patch that survives branch switches,
+  then Unshelve or Delete from the Shelf tab.
 
-## Roadmap
+### Branches and remotes
+- A status-bar widget (`branch ↓behind ↑ahead`) and the panel header open the
+  **Branches popup**: Checkout, New Branch, Merge, Rebase, Rename, Delete, and
+  Compare with Current (lists differing files and diffs them).
+- **Update** (fetch then pull with rebase or merge) and **Push** (with a preview
+  of outgoing commits, setting the upstream when missing).
 
-1. Scaffold + git CLI wrapper – done
-2. Changelists model – done
-3. Commit and Push – done
-4. JetBrains-style webview tool window (Local Changes) – done
-5. Log / commit graph tab, with commit context actions – done
-6. Branches popup (status-bar widget, checkout / merge / rebase / rename / delete) – done
-7. Shelf (shelve / unshelve) tab – done
-8. Diff polish, per-hunk partial commit, interactive rebase, conflict resolver, blame – next
+### In the editor
+- **Annotate with Git Blame**: per-line author and date, toggled from the editor
+  context menu or command palette.
+- **Show File History**: a file's commits, each opening the revision's diff.
 
 ## Development
 
@@ -49,8 +59,17 @@ npm run typecheck      # tsc --noEmit
 ```
 
 Press **F5** in VS Code (with this folder open) to launch an Extension Development
-Host with `legit` loaded, then open any git repository. The **legit** panel appears
-in the bottom tool-window area (View > Appearance > Panel, or Ctrl+J if hidden).
+Host with `legit` loaded, then open any git repository. The **legit** panel opens
+in the bottom tool-window area (also `Alt+9`, or the LEGIT tab next to Terminal).
+
+## Roadmap
+
+The JetBrains Git tool window is largely covered. Still on the list:
+
+- Interactive rebase (reorder / squash / edit) with a GUI
+- A three-pane merge resolver of legit's own (today conflicts open the VS Code
+  merge editor)
+- Richer Log filters (by branch / user / path) and a Console tab
 
 ## License
 
