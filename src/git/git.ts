@@ -265,6 +265,9 @@ export class Git {
   async renameBranch(oldName: string, newName: string): Promise<void> {
     await this.raw(['branch', '-m', oldName, newName]);
   }
+  async setUpstream(remoteRef: string): Promise<void> {
+    await this.raw(['branch', `--set-upstream-to=${remoteRef}`]);
+  }
 
   async cherryPick(hash: string): Promise<void> {
     await this.raw(['cherry-pick', hash]);
