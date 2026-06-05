@@ -314,6 +314,9 @@
       selectedPath = f.path;
       document.querySelectorAll('.tree-row.selected').forEach((x) => x.classList.remove('selected'));
       row.classList.add('selected');
+    });
+    row.addEventListener('dblclick', (e) => {
+      if (e.target === cb) return;
       if (f.conflicted) vscode.postMessage({ type: 'mergeResolve', path: f.path });
       else vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
     });
