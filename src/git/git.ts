@@ -89,10 +89,15 @@ export class Git {
    * partial commit limited to those files, so changes staged elsewhere are left
    * untouched -- matching JetBrains "commit only this changelist" semantics.
    */
-  async commit(message: string, paths: string[], opts: { amend?: boolean; signoff?: boolean } = {}): Promise<void> {
+  async commit(
+    message: string,
+    paths: string[],
+    opts: { amend?: boolean; signoff?: boolean; author?: string } = {},
+  ): Promise<void> {
     const args = ['commit', '-m', message];
     if (opts.amend) args.push('--amend');
     if (opts.signoff) args.push('--signoff');
+    if (opts.author) args.push('--author', opts.author);
     if (paths.length) args.push('--', ...paths);
     await this.raw(args);
   }

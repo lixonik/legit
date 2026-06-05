@@ -220,6 +220,17 @@ input[type="checkbox"] {
 .opt { display: flex; align-items: center; gap: 4px; color: var(--fg-dim); font-size: 11px; cursor: pointer; }
 .selinfo { color: var(--fg-dim); font-size: 11px; }
 .spacer { flex: 1; }
+.author-input {
+  background: var(--input);
+  color: var(--fg);
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  width: 150px;
+  outline: none;
+}
+.author-input:focus { border-color: var(--accent); }
 .btn {
   padding: 4px 12px;
   border: 1px solid transparent;

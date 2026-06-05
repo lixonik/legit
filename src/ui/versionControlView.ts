@@ -17,6 +17,7 @@ interface CommitMsg {
   amend: boolean;
   push: boolean;
   signoff: boolean;
+  author: string;
 }
 type Incoming =
   | {
@@ -408,7 +409,12 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       return;
     }
     try {
-      await this.repo.commit(m.paths, m.message.trim(), { amend: m.amend, push: m.push, signoff: m.signoff });
+      await this.repo.commit(m.paths, m.message.trim(), {
+        amend: m.amend,
+        push: m.push,
+        signoff: m.signoff,
+        author: m.author?.trim() || undefined,
+      });
       this.view?.webview.postMessage({ type: 'committed' });
       vscode.window.showInformationMessage(
         `JeGit: committed ${m.paths.length} file(s)${m.push ? ' and pushed' : ''}.`,
@@ -638,6 +644,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <div class="commit-row">
         <label class="opt"><input type="checkbox" id="amend" /> Amend</label>
         <label class="opt"><input type="checkbox" id="signoff" /> Sign-off</label>
+        <input type="text" id="author" class="author-input" placeholder="Author (optional)" title="Commit as another author: Name &lt;email&gt;" />
         <span class="selinfo" id="selinfo"></span>
         <span class="spacer"></span>
         <button class="btn secondary" id="commit" disabled>Commit</button>

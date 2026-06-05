@@ -124,10 +124,10 @@ export class Repository implements vscode.Disposable {
   async commit(
     paths: string[],
     message: string,
-    opts: { amend?: boolean; push?: boolean; signoff?: boolean },
+    opts: { amend?: boolean; push?: boolean; signoff?: boolean; author?: string },
   ): Promise<void> {
     await this.git.add(paths);
-    await this.git.commit(message, paths, { amend: opts.amend, signoff: opts.signoff });
+    await this.git.commit(message, paths, { amend: opts.amend, signoff: opts.signoff, author: opts.author });
     if (opts.push) await this.git.push();
     await this.refresh();
   }
