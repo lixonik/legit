@@ -64,13 +64,14 @@ in the bottom tool-window area (also `Alt+9`, or the LEGIT tab next to Terminal)
 
 ## Roadmap
 
-The JetBrains Git tool window is largely covered. Still on the list:
+The JetBrains Git tool window is covered, including an interactive-rebase dialog
+(reorder commits, pick / fixup / drop) and reword / squash from the Log. Possible
+future polish:
 
-- A full drag-to-reorder interactive rebase GUI (reword, fixup and drop are
-  already available from the Log context menu)
 - A three-pane merge resolver of legit's own (today conflicts open the VS Code
-  merge editor)
-- Richer Log filters (by branch / user / path)
+  merge editor, which handles them well)
+- Log filters by user and path (filtering by branch and free text is already in)
+- Drag-and-drop reordering in the rebase dialog (it uses up/down buttons today)
 
 ## License
 
