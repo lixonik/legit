@@ -29,6 +29,7 @@ type Incoming =
   | { type: 'openFile'; path: string }
   | { type: 'markResolved'; paths: string[] }
   | { type: 'fileHistory'; path: string }
+  | { type: 'tagAt'; hash: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -240,6 +241,16 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'fileHistory':
         await showFileHistory(this.repo, m.path);
         break;
+      case 'tagAt': {
+        const name = await vscode.window.showInputBox({ prompt: 'New tag name', placeHolder: 'v1.0.0' });
+        if (!name) break;
+        const message = await vscode.window.showInputBox({ prompt: 'Tag message (optional, empty = lightweight tag)' });
+        await this.runLogOp(
+          () => this.repo.git.createTag(name.trim(), m.hash, message?.trim() || undefined),
+          `created tag ${name.trim()}`,
+        );
+        break;
+      }
       case 'rollback':
         await this.rollback(m.items);
         break;

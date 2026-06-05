@@ -339,6 +339,14 @@ export class Git {
     }
     return res;
   }
+
+  async createTag(name: string, ref: string, message?: string): Promise<void> {
+    const args = ['tag'];
+    if (message) args.push('-a', name, '-m', message);
+    else args.push(name);
+    if (ref) args.push(ref);
+    await this.raw(args);
+  }
 }
 
 function normalize(p: string): string {

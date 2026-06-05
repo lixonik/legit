@@ -54,6 +54,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (name) await repo.newChangelist(name.trim());
   });
   reg('legit.branches', () => showBranches(repo));
+  reg('legit.newTag', async () => {
+    const name = await vscode.window.showInputBox({ prompt: 'New tag name', placeHolder: 'v1.0.0' });
+    if (!name) return;
+    const message = await vscode.window.showInputBox({ prompt: 'Tag message (optional, empty = lightweight tag)' });
+    try {
+      await git.createTag(name.trim(), '', message?.trim() || undefined);
+      vscode.window.showInformationMessage(`legit: created tag ${name.trim()}.`);
+      await repo.refresh();
+    } catch (err) {
+      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  });
   reg('legit.push', () => pushFlow(repo));
   reg('legit.update', () => updateFlow(repo));
 

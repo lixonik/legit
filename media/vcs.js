@@ -581,6 +581,7 @@
         { label: 'Edit Commit Message...', cmd: () => vscode.postMessage({ type: 'editMessage', hash: c.hash }) },
         { label: 'Undo Commit', cmd: () => vscode.postMessage({ type: 'undoCommit', hash: c.hash }) },
         { label: 'Reset Current Branch to Here...', cmd: () => vscode.postMessage({ type: 'resetTo', hash: c.hash }) },
+        { label: 'New Tag...', cmd: () => vscode.postMessage({ type: 'tagAt', hash: c.hash }) },
         { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
       ]);
     });

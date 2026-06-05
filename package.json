@@ -85,6 +85,12 @@
         "title": "Show File History",
         "category": "legit",
         "icon": "$(history)"
+      },
+      {
+        "command": "legit.newTag",
+        "title": "New Tag...",
+        "category": "legit",
+        "icon": "$(tag)"
       }
     ],
     "menus": {
