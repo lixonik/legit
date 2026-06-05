@@ -332,6 +332,14 @@ input[type="checkbox"] {
 .lb-row .codicon { font-size: 13px; }
 .lb-name { overflow: hidden; text-overflow: ellipsis; }
 .lb-all { padding-left: 8px; }
+.splitter {
+  flex: 0 0 auto;
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border);
+  position: relative;
+}
+.splitter:hover, .splitter.dragging { background: var(--accent); }
 .log-left { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .log-header {
   display: flex;

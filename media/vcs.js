@@ -932,5 +932,35 @@
     }
   });
 
+  // Resizable splitters between the Log panes (JetBrains panes are draggable).
+  function makeSplitter(splitterId, targetId, grow) {
+    const splitter = document.getElementById(splitterId);
+    const target = document.getElementById(targetId);
+    if (!splitter || !target) return;
+    splitter.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = target.getBoundingClientRect().width;
+      splitter.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+      const onMove = (ev) => {
+        const w = Math.max(120, Math.min(720, startW + (ev.clientX - startX) * grow));
+        target.style.flex = '0 0 ' + w + 'px';
+        target.style.width = w + 'px';
+        target.style.maxWidth = 'none';
+      };
+      const onUp = () => {
+        splitter.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+  makeSplitter('split-branches', 'log-branches', 1);
+  makeSplitter('split-details', 'log-details', -1);
+
   vscode.postMessage({ type: 'ready' });
 })();
