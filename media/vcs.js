@@ -303,7 +303,7 @@
     }
     row.addEventListener('click', (e) => {
       if (e.target === cb) return;
-      if (f.conflicted) vscode.postMessage({ type: 'openFile', path: f.path });
+      if (f.conflicted) vscode.postMessage({ type: 'mergeResolve', path: f.path });
       else vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked });
     });
     row.addEventListener('contextmenu', (e) => {
@@ -311,7 +311,8 @@
       e.stopPropagation();
       const menu = [];
       if (f.conflicted) {
-        menu.push({ label: 'Open / Resolve Conflict', cmd: () => vscode.postMessage({ type: 'openFile', path: f.path }) });
+        menu.push({ label: 'Resolve in 3-pane Merge', cmd: () => vscode.postMessage({ type: 'mergeResolve', path: f.path }) });
+        menu.push({ label: 'Open in Editor', cmd: () => vscode.postMessage({ type: 'openFile', path: f.path }) });
         menu.push({ label: 'Mark as Resolved', cmd: () => vscode.postMessage({ type: 'markResolved', paths: [f.path] }) });
       }
       menu.push({ label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) });

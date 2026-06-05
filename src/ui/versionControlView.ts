@@ -7,6 +7,7 @@ import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
 import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
 import { showFileHistory } from './history';
 import { showRebaseDialog } from './rebaseDialog';
+import { showMergeResolver } from './mergeResolver';
 
 interface CommitMsg {
   type: 'commit';
@@ -55,6 +56,7 @@ type Incoming =
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
   | { type: 'unshelve' | 'deleteShelf'; id: string }
   | { type: 'openFile'; path: string }
+  | { type: 'mergeResolve'; path: string }
   | { type: 'markResolved'; paths: string[] }
   | { type: 'fileHistory'; path: string }
   | { type: 'tagAt'; hash: string }
@@ -351,6 +353,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'openFile':
         await vscode.commands.executeCommand('vscode.open', this.repo.absUri(m.path));
+        break;
+      case 'mergeResolve':
+        await showMergeResolver(this.context, this.repo, m.path);
         break;
       case 'markResolved':
         await this.repo.git.add(m.paths);

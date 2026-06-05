@@ -205,6 +205,15 @@ export class Git {
     await this.raw(['checkout', rev, '--', relPath]);
   }
 
+  /** A conflicted file's stage content (1=base, 2=ours, 3=theirs); '' if absent. */
+  async showStage(stage: 1 | 2 | 3, relPath: string): Promise<string> {
+    try {
+      return await this.raw(['show', `:${stage}:${relPath}`]);
+    } catch {
+      return '';
+    }
+  }
+
   async branches(): Promise<{ current: string; locals: string[]; remotes: string[] }> {
     const current = await this.currentBranch();
     const l = await this.raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads']).catch(() => '');
