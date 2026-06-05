@@ -54,9 +54,19 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
 
   const pick = await vscode.window.showQuickPick(actions, { placeHolder: ref });
   if (!pick) return;
+  await performBranchAction(repo, ref, current, isRemote, pick.a);
+}
 
+/** Run a named branch action; shared by the Branches popup and the Log branch context menu. */
+export async function performBranchAction(
+  repo: Repository,
+  ref: string,
+  current: string,
+  isRemote: boolean,
+  action: string,
+): Promise<void> {
   try {
-    switch (pick.a) {
+    switch (action) {
       case 'checkout':
         await repo.git.checkout(isRemote ? ref.substring(ref.indexOf('/') + 1) : ref);
         break;
@@ -111,7 +121,7 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
         break;
       }
     }
-    vscode.window.showInformationMessage(`JeGit: ${pick.a} (${ref}) done.`);
+    vscode.window.showInformationMessage(`JeGit: ${action} (${ref}) done.`);
   } catch (err) {
     vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {

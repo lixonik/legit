@@ -3,7 +3,7 @@
   // Persisted UI layout (pane widths, active tab, branch-group collapse), so the
   // Log layout survives reloads like a JetBrains tool window.
   const ui = Object.assign(
-    { branchesW: 0, detailsW: 0, tab: '', branchCollapsed: {} },
+    { branchesW: 0, detailsW: 0, tab: '', branchCollapsed: {}, tabOrder: [] },
     vscode.getState() || {},
   );
   function saveUi() {
@@ -74,6 +74,48 @@
   document.querySelectorAll('.tab').forEach((t) => {
     t.addEventListener('click', () => activateTab(t.getAttribute('data-tab')));
   });
+
+  // Tabs are draggable to reorder, like JetBrains tool-window tabs.
+  function saveTabOrder() {
+    ui.tabOrder = [...document.querySelectorAll('.tabbar .tab')].map((t) => t.getAttribute('data-tab'));
+    saveUi();
+  }
+  (function setupTabDnD() {
+    const bar = document.querySelector('.tabbar');
+    let dragged = null;
+    document.querySelectorAll('.tab').forEach((t) => {
+      t.draggable = true;
+      t.addEventListener('dragstart', (e) => {
+        dragged = t;
+        t.classList.add('dragging');
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      });
+      t.addEventListener('dragend', () => {
+        t.classList.remove('dragging');
+        dragged = null;
+      });
+      t.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      });
+      t.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!dragged || dragged === t) return;
+        const tabs = [...bar.querySelectorAll('.tab')];
+        if (tabs.indexOf(dragged) < tabs.indexOf(t)) t.after(dragged);
+        else t.before(dragged);
+        saveTabOrder();
+      });
+    });
+    // Restore a previously saved tab order.
+    if (ui.tabOrder && ui.tabOrder.length) {
+      const branch = document.getElementById('branch');
+      ui.tabOrder.forEach((name) => {
+        const t = bar.querySelector('.tab[data-tab="' + name + '"]');
+        if (t) bar.insertBefore(t, branch);
+      });
+    }
+  })();
 
   // Local Changes toolbar
   $('tb-focus').addEventListener('click', () => msg.focus());
@@ -718,6 +760,24 @@
       row.append(i, nm);
       row.title = b;
       row.addEventListener('click', () => vscode.postMessage({ type: 'setLogScope', scope: b }));
+      row.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = [{ label: 'Show Log for This Branch', cmd: () => vscode.postMessage({ type: 'setLogScope', scope: b }) }];
+        if (b !== current) menu.push({ label: 'Checkout', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'checkout', isRemote: isRemote }) });
+        menu.push({ label: 'New Branch from Here...', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'newfrom', isRemote: isRemote }) });
+        if (b !== current) {
+          menu.push({ label: 'Merge into Current', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'merge', isRemote: isRemote }) });
+          menu.push({ label: 'Rebase Current onto This', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'rebase', isRemote: isRemote }) });
+          menu.push({ label: 'Compare with Current', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'compare', isRemote: isRemote }) });
+        }
+        if (!isRemote && b !== current) {
+          menu.push({ label: 'Rename...', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'rename', isRemote: isRemote }) });
+          menu.push({ label: 'Delete', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'delete', isRemote: isRemote }) });
+        }
+        if (isRemote) menu.push({ label: 'Set as Upstream of Current', cmd: () => vscode.postMessage({ type: 'branchCmd', ref: b, action: 'setupstream', isRemote: isRemote }) });
+        showCtx(e, menu);
+      });
       host.appendChild(row);
     }
   }

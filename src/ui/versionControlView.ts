@@ -7,6 +7,7 @@ import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
 import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
 import { showFileHistory } from './history';
 import { showRebaseDialog } from './rebaseDialog';
+import { performBranchAction } from './branches';
 import { showMergeResolver } from './mergeResolver';
 import { splitHunks } from '../util/diff';
 import { toWebUrl, commitWebUrl } from '../util/remoteUrl';
@@ -70,6 +71,7 @@ type Incoming =
   | { type: 'createPatch'; items: { path: string; untracked: boolean }[] }
   | { type: 'copyPath'; path: string; absolute: boolean }
   | { type: 'setLogScope'; scope: string }
+  | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -205,6 +207,15 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'setLogScope': {
         this.logScope = m.scope || '--all';
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        await this.postBranches();
+        break;
+      }
+      case 'branchCmd': {
+        const { current } = await this.repo.git.branches();
+        await performBranchAction(this.repo, m.ref, current, m.isRemote, m.action);
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });

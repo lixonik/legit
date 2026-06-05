@@ -49,6 +49,7 @@ body {
 }
 .tab:hover { color: var(--fg); }
 .tab.active { color: #fff; border-bottom-color: var(--accent); }
+.tab.dragging { opacity: 0.5; }
 .branch {
   margin-left: auto;
   padding: 0 10px;
