@@ -1,5 +1,18 @@
 (function () {
   const vscode = acquireVsCodeApi();
+  // Persisted UI layout (pane widths, active tab, branch-group collapse), so the
+  // Log layout survives reloads like a JetBrains tool window.
+  const ui = Object.assign(
+    { branchesW: 0, detailsW: 0, tab: '', branchCollapsed: {} },
+    vscode.getState() || {},
+  );
+  function saveUi() {
+    try {
+      vscode.setState(ui);
+    } catch (e) {
+      /* ignore */
+    }
+  }
   let state = { branch: '', total: 0, changelists: [] };
   const checked = new Set();
   const known = new Set();
@@ -44,20 +57,22 @@
   const consoleLogEl = $('console-log');
 
   // Tabs
+  function activateTab(tab) {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.getAttribute('data-tab') === tab));
+    document.querySelectorAll('.tabpanel').forEach((p) =>
+      p.classList.toggle('active', p.getAttribute('data-tab') === tab),
+    );
+    if (tab === 'log' && !logLoaded) {
+      logLoaded = true;
+      vscode.postMessage({ type: 'requestLog' });
+    }
+    if (tab === 'shelf') vscode.postMessage({ type: 'requestShelf' });
+    if (tab === 'console') vscode.postMessage({ type: 'requestConsole' });
+    ui.tab = tab;
+    saveUi();
+  }
   document.querySelectorAll('.tab').forEach((t) => {
-    t.addEventListener('click', () => {
-      const tab = t.getAttribute('data-tab');
-      document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
-      document.querySelectorAll('.tabpanel').forEach((p) =>
-        p.classList.toggle('active', p.getAttribute('data-tab') === tab),
-      );
-      if (tab === 'log' && !logLoaded) {
-        logLoaded = true;
-        vscode.postMessage({ type: 'requestLog' });
-      }
-      if (tab === 'shelf') vscode.postMessage({ type: 'requestShelf' });
-      if (tab === 'console') vscode.postMessage({ type: 'requestConsole' });
-    });
+    t.addEventListener('click', () => activateTab(t.getAttribute('data-tab')));
   });
 
   // Local Changes toolbar
@@ -588,7 +603,7 @@
 
   // ---- Log: JetBrains-style left branches tree ----
   let branchInfo = null;
-  const branchCollapsed = { Local: false, Remote: false };
+  const branchCollapsed = Object.assign({ Local: false, Remote: false }, ui.branchCollapsed || {});
   function renderBranches(data) {
     if (data) branchInfo = data;
     const host = document.getElementById('log-branches');
@@ -616,6 +631,8 @@
     g.append(chev, name);
     g.addEventListener('click', () => {
       branchCollapsed[label] = !branchCollapsed[label];
+      ui.branchCollapsed = branchCollapsed;
+      saveUi();
       renderBranches();
     });
     host.appendChild(g);
@@ -933,34 +950,46 @@
   });
 
   // Resizable splitters between the Log panes (JetBrains panes are draggable).
-  function makeSplitter(splitterId, targetId, grow) {
+  function applyPaneWidth(target, w) {
+    target.style.flex = '0 0 ' + w + 'px';
+    target.style.width = w + 'px';
+    target.style.maxWidth = 'none';
+  }
+  function makeSplitter(splitterId, targetId, grow, key) {
     const splitter = document.getElementById(splitterId);
     const target = document.getElementById(targetId);
     if (!splitter || !target) return;
+    if (key && ui[key]) applyPaneWidth(target, ui[key]);
     splitter.addEventListener('mousedown', (e) => {
       e.preventDefault();
       const startX = e.clientX;
       const startW = target.getBoundingClientRect().width;
       splitter.classList.add('dragging');
       document.body.style.userSelect = 'none';
+      let lastW = startW;
       const onMove = (ev) => {
-        const w = Math.max(120, Math.min(720, startW + (ev.clientX - startX) * grow));
-        target.style.flex = '0 0 ' + w + 'px';
-        target.style.width = w + 'px';
-        target.style.maxWidth = 'none';
+        lastW = Math.max(120, Math.min(720, startW + (ev.clientX - startX) * grow));
+        applyPaneWidth(target, lastW);
       };
       const onUp = () => {
         splitter.classList.remove('dragging');
         document.body.style.userSelect = '';
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        if (key) {
+          ui[key] = lastW;
+          saveUi();
+        }
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
   }
-  makeSplitter('split-branches', 'log-branches', 1);
-  makeSplitter('split-details', 'log-details', -1);
+  makeSplitter('split-branches', 'log-branches', 1, 'branchesW');
+  makeSplitter('split-details', 'log-details', -1, 'detailsW');
+
+  // Restore the last active tab.
+  if (ui.tab && ui.tab !== 'local') activateTab(ui.tab);
 
   vscode.postMessage({ type: 'ready' });
 })();
