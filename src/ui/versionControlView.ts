@@ -9,6 +9,7 @@ import { showFileHistory } from './history';
 import { showRebaseDialog } from './rebaseDialog';
 import { showMergeResolver } from './mergeResolver';
 import { splitHunks } from '../util/diff';
+import { toWebUrl, commitWebUrl } from '../util/remoteUrl';
 
 interface CommitMsg {
   type: 'commit';
@@ -53,7 +54,8 @@ type Incoming =
         | 'squashTo'
         | 'dropCommit'
         | 'fixupCommit'
-        | 'interactiveRebase';
+        | 'interactiveRebase'
+        | 'openCommitRemote';
       hash: string;
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
@@ -219,6 +221,17 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         await vscode.env.clipboard.writeText(m.hash);
         vscode.window.showInformationMessage(`JeGit: copied ${m.hash.slice(0, 10)}`);
         break;
+      case 'openCommitRemote': {
+        const remotes = await this.repo.git.remotesList();
+        const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0];
+        const web = origin ? toWebUrl(origin.url) : '';
+        if (!web) {
+          vscode.window.showInformationMessage('JeGit: could not determine the remote web URL.');
+          break;
+        }
+        await vscode.env.openExternal(vscode.Uri.parse(commitWebUrl(web, m.hash)));
+        break;
+      }
       case 'checkoutRev':
         await this.runLogOp(() => this.repo.git.checkout(m.hash), `checked out ${m.hash.slice(0, 7)} (detached)`);
         break;

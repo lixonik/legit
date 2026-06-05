@@ -8,6 +8,7 @@ import { registerContentProviders, REV_SCHEME } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { manageRemotes } from './ui/remotes';
+import { toWebUrl, fileWebUrl } from './util/remoteUrl';
 import { pushFlow, updateFlow } from './ui/remoteOps';
 import { stashChanges, unstash } from './ui/stash';
 import { BlameController } from './ui/blame';
@@ -57,6 +58,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('jegit.branches', () => showBranches(repo));
   reg('jegit.manageRemotes', () => manageRemotes(repo));
+  reg('jegit.openFileOnRemote', async () => {
+    const uri = vscode.window.activeTextEditor?.document.uri;
+    if (!uri || uri.scheme !== 'file') {
+      vscode.window.showInformationMessage('JeGit: open a file first.');
+      return;
+    }
+    const remotes = await git.remotesList();
+    const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0];
+    const web = origin ? toWebUrl(origin.url) : '';
+    if (!web) {
+      vscode.window.showInformationMessage('JeGit: could not determine the remote web URL.');
+      return;
+    }
+    await vscode.env.openExternal(vscode.Uri.parse(fileWebUrl(web, repo.branch || 'main', repo.relPathOf(uri))));
+  });
   reg('jegit.compareFileWithBranch', async () => {
     const uri = vscode.window.activeTextEditor?.document.uri;
     if (!uri || uri.scheme !== 'file') {

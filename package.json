@@ -126,6 +126,12 @@
         "icon": "$(git-compare)"
       },
       {
+        "command": "jegit.openFileOnRemote",
+        "title": "Open File on Remote",
+        "category": "JeGit",
+        "icon": "$(globe)"
+      },
+      {
         "command": "jegit.newTag",
         "title": "New Tag...",
         "category": "JeGit",
@@ -199,6 +205,11 @@
           "command": "jegit.compareFileWithBranch",
           "when": "resourceScheme == file",
           "group": "navigation@11"
+        },
+        {
+          "command": "jegit.openFileOnRemote",
+          "when": "resourceScheme == file",
+          "group": "navigation@12"
         }
       ]
     }
