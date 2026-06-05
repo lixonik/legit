@@ -19,11 +19,11 @@ A feature-complete JetBrains-style Git tool window.
 - Three-pane merge resolver (Yours | editable Result | Theirs) with per-conflict and whole-file accept.
 
 ### Shelf, Console, stash and patches
-- Shelve / Unshelve; a Console git-command log; Stash / Unstash; Create / Apply Patch.
+- Shelve / Unshelve; a Console git-command log; Stash / Unstash; Create / Apply Patch (from a file or the clipboard).
 
 ### Branches and remotes
-- Branches popup (Checkout, New, Merge, Rebase, Rename, Delete, Compare with Current) and an ahead/behind status-bar widget.
-- Update (fetch then pull), Push (with an outgoing-commit preview), Force Push, Push Tags, and Manage Remotes.
+- Branches popup (Checkout, New, Merge, Rebase, Rename, Delete, Compare with Current, Set Upstream) and an ahead/behind status-bar widget.
+- Fetch, Update (fetch then pull), Push (with an outgoing-commit preview), Force Push, Push Tags, and Manage Remotes.
 
 ### Editor
 - Git blame annotation; file history with restore to a revision; Copy Path.
