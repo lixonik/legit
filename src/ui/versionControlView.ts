@@ -25,7 +25,16 @@ type Incoming =
   | { type: 'commitDetails'; hash: string }
   | { type: 'openRevDiff'; hash: string; parent: string; path: string }
   | {
-      type: 'copyHash' | 'checkoutRev' | 'newBranchAt' | 'cherryPick' | 'revertCommit' | 'resetTo' | 'editMessage' | 'undoCommit';
+      type:
+        | 'copyHash'
+        | 'checkoutRev'
+        | 'newBranchAt'
+        | 'cherryPick'
+        | 'revertCommit'
+        | 'resetTo'
+        | 'editMessage'
+        | 'undoCommit'
+        | 'squashTo';
       hash: string;
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
@@ -221,6 +230,28 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         );
         if (ok !== 'Undo Commit') break;
         await this.runLogOp(() => this.repo.git.undoLastCommit(), 'undid the last commit');
+        break;
+      }
+      case 'squashTo': {
+        const head = await this.repo.git.headHash();
+        if (m.hash === head) {
+          vscode.window.showInformationMessage('legit: pick an older commit; this squashes it and all newer commits into one.');
+          break;
+        }
+        if (!(await this.repo.git.isAncestor(m.hash, 'HEAD'))) {
+          vscode.window.showInformationMessage('legit: that commit is not in the current branch history.');
+          break;
+        }
+        const combined = await this.repo.git.rangeMessages(`${m.hash}~1..HEAD`);
+        const message = await vscode.window.showInputBox({
+          prompt: `Squash ${m.hash.slice(0, 7)}..HEAD into one commit`,
+          value: combined.split('\n')[0] || '',
+        });
+        if (!message || !message.trim()) break;
+        await this.runLogOp(async () => {
+          await this.repo.git.reset(`${m.hash}~1`, 'soft');
+          await this.repo.git.commitIndex(message.trim());
+        }, `squashed ${m.hash.slice(0, 7)}..HEAD`);
         break;
       }
       case 'newChangelist': {

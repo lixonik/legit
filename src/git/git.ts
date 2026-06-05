@@ -395,6 +395,23 @@ export class Git {
   async commitIndex(message: string): Promise<void> {
     await this.raw(['commit', '-m', message]);
   }
+
+  async isAncestor(a: string, b: string): Promise<boolean> {
+    try {
+      await this.raw(['merge-base', '--is-ancestor', a, b]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async rangeMessages(range: string): Promise<string> {
+    try {
+      return (await this.raw(['log', '--reverse', '--format=%B', range])).trim();
+    } catch {
+      return '';
+    }
+  }
 }
 
 function normalize(p: string): string {
