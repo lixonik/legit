@@ -38,14 +38,15 @@ Darcula-styled, tabbed UI: **Local Changes / Log / Shelf / Console**.
 
 ### Branches and remotes
 - A status-bar widget (`branch ↓behind ↑ahead`) and the panel header open the
-  **Branches popup**: Checkout, New, Merge, Rebase, Rename, Delete, Compare.
-- **Update** (fetch + pull), **Push** (with an outgoing-commit preview),
+  **Branches popup**: Checkout, New, Merge, Rebase, Rename, Delete, Compare,
+  **Set Upstream**.
+- **Fetch**, **Update** (fetch + pull), **Push** (with an outgoing-commit preview),
   **Force Push**, **Push Tags**, and **Manage Remotes** (add / rename / change
   URL / remove).
 
 ### Editor
 - **Annotate with Git Blame**, **Show File History** (with restore to a revision),
-  **Apply Patch**, **Stash / Unstash**, and **Copy Path**.
+  **Apply Patch** (from a file or the clipboard), **Stash / Unstash**, and **Copy Path**.
 
 ## Development
 
