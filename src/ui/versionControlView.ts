@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { Repository } from '../model/repository';
 import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
 import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
@@ -30,6 +32,7 @@ type Incoming =
   | { type: 'markResolved'; paths: string[] }
   | { type: 'fileHistory'; path: string }
   | { type: 'tagAt'; hash: string }
+  | { type: 'commitHunks'; path: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -257,6 +260,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'commit':
         await this.commit(m);
         break;
+      case 'commitHunks':
+        await this.commitHunks(m.path);
+        break;
     }
   }
 
@@ -277,6 +283,52 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       );
     } catch (err) {
       vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  /** Commit a subset of a file's hunks: stage selected hunks to the index, commit. */
+  private async commitHunks(rel: string): Promise<void> {
+    const diff = await this.repo.git.diffHead([rel]);
+    if (!diff.trim()) {
+      vscode.window.showInformationMessage('legit: no changes to commit in this file.');
+      return;
+    }
+    const { header, hunks } = splitHunks(diff);
+    if (!hunks.length) {
+      vscode.window.showInformationMessage('legit: no hunks found.');
+      return;
+    }
+    type Hunk = vscode.QuickPickItem & { index: number };
+    const items: Hunk[] = hunks.map((h, i) => ({
+      label: h.header,
+      detail: h.lines.slice(1, 4).join(' ').slice(0, 100),
+      picked: true,
+      index: i,
+    }));
+    const picked = await vscode.window.showQuickPick(items, {
+      canPickMany: true,
+      placeHolder: `Select hunks of ${rel.split('/').pop()} to commit`,
+    });
+    if (!picked || !picked.length) return;
+    const message = await vscode.window.showInputBox({ prompt: 'Commit message' });
+    if (!message || !message.trim()) return;
+
+    const patch = header + '\n' + picked.map((p) => hunks[p.index].lines.join('\n')).join('\n') + '\n';
+    const tmp = path.join(os.tmpdir(), `legit-hunks-${Date.now()}.patch`);
+    try {
+      fs.writeFileSync(tmp, patch, 'utf8');
+      await this.repo.git.applyCached(tmp);
+      await this.repo.git.commitIndex(message.trim());
+      vscode.window.showInformationMessage(`legit: committed ${picked.length} hunk(s) of ${rel.split('/').pop()}.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`legit: partial commit failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      try {
+        fs.unlinkSync(tmp);
+      } catch {
+        /* ignore */
+      }
+      await this.repo.refresh();
     }
   }
 
@@ -444,4 +496,27 @@ function makeNonce(): string {
   let s = '';
   for (let i = 0; i < 24; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
   return s;
+}
+
+/** Split a unified diff into its file header and individual hunks. */
+function splitHunks(diff: string): { header: string; hunks: { header: string; lines: string[] }[] } {
+  const lines = diff.split('\n');
+  let i = 0;
+  const header: string[] = [];
+  while (i < lines.length && !lines[i].startsWith('@@')) {
+    header.push(lines[i]);
+    i++;
+  }
+  const hunks: { header: string; lines: string[] }[] = [];
+  let cur: { header: string; lines: string[] } | null = null;
+  for (; i < lines.length; i++) {
+    if (lines[i].startsWith('@@')) {
+      if (cur) hunks.push(cur);
+      cur = { header: lines[i], lines: [lines[i]] };
+    } else if (cur) {
+      cur.lines.push(lines[i]);
+    }
+  }
+  if (cur) hunks.push(cur);
+  return { header: header.join('\n'), hunks };
 }

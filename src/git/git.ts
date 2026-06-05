@@ -379,6 +379,13 @@ export class Git {
     }
     return files;
   }
+
+  async applyCached(patchPath: string): Promise<void> {
+    await this.raw(['apply', '--cached', '--whitespace=nowarn', patchPath]);
+  }
+  async commitIndex(message: string): Promise<void> {
+    await this.raw(['commit', '-m', message]);
+  }
 }
 
 function normalize(p: string): string {
