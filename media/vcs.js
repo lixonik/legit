@@ -824,6 +824,7 @@
   function logRow(c, gr, withGraph) {
     const row = document.createElement('div');
     row.className = 'log-row' + (c.hash === selectedHash ? ' selected' : '');
+    row.dataset.hash = c.hash;
     if (withGraph && gr) {
       row.appendChild(graphSvg(gr));
     } else {
@@ -1014,6 +1015,24 @@
     logDetails.appendChild(files);
   }
 
+  // Select a commit in the Log by hash and scroll to it (from the blame link).
+  function revealCommit(hash) {
+    if (!hash) return;
+    logLoaded = true;
+    activateTab('log');
+    let row = document.querySelector('.log-row[data-hash="' + hash + '"]');
+    if (!row) {
+      row = [...document.querySelectorAll('.log-row')].find((r) => {
+        const h = r.dataset.hash || '';
+        return h && (h.indexOf(hash) === 0 || hash.indexOf(h) === 0);
+      });
+    }
+    if (row) {
+      row.click();
+      row.scrollIntoView({ block: 'center' });
+    }
+  }
+
   // ---- Shelf rendering ----
   function renderShelf() {
     shelfList.innerHTML = '';
@@ -1102,6 +1121,8 @@
       if (m.hash === selectedHash) renderDetails(m);
     } else if (m.type === 'branchData') {
       renderBranches(m);
+    } else if (m.type === 'revealCommit') {
+      revealCommit(m.hash || '');
     } else if (m.type === 'shelfData') {
       shelfEntries = m.entries || [];
       renderShelf();

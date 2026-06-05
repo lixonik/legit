@@ -195,6 +195,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const blame = new BlameController(repo);
   context.subscriptions.push(blame);
   reg('jegit.toggleBlame', () => blame.toggle());
+  reg('jegit.showCommitInLog', (hash: string) => view.revealCommitInLog(hash));
   reg('jegit.fileHistory', () => {
     const uri = vscode.window.activeTextEditor?.document.uri;
     if (!uri || uri.scheme !== 'file') {

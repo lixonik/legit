@@ -44,10 +44,16 @@ export class BlameController implements vscode.Disposable {
     for (let i = 0; i < lineCount; i++) {
       const b = blame[i];
       if (!b) continue;
+      const args = encodeURIComponent(JSON.stringify([b.hash]));
+      const md = new vscode.MarkdownString(
+        `**${b.hash.slice(0, 8)}** · ${b.author} · ${b.date}\n\n[$(git-commit) Show Commit in Log](command:jegit.showCommitInLog?${args})`,
+      );
+      md.isTrusted = true;
+      md.supportThemeIcons = true;
       options.push({
         range: new vscode.Range(i, 0, i, 0),
         renderOptions: { before: { contentText: `${b.date} ${shorten(b.author, 16)}` } },
-        hoverMessage: `${b.hash} · ${b.author} · ${b.date}`,
+        hoverMessage: md,
       });
     }
     ed.setDecorations(this.deco, options);

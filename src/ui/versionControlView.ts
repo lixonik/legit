@@ -135,6 +135,16 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: 'consoleLine', line: entry });
   }
 
+  /** Focus the Log tab and select a commit by hash (used by the blame "Show Commit in Log" link). */
+  async revealCommitInLog(hash: string): Promise<void> {
+    await vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`);
+    const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
+    const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
+    this.view?.webview.postMessage({ type: 'logData', commits });
+    await this.postBranches();
+    this.view?.webview.postMessage({ type: 'revealCommit', hash });
+  }
+
   private async onMessage(m: Incoming): Promise<void> {
     switch (m.type) {
       case 'ready':
