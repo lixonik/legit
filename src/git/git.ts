@@ -443,6 +443,46 @@ export class Git {
   async stashDrop(ref: string): Promise<void> {
     await this.raw(['stash', 'drop', ref]);
   }
+
+  async resetHard(ref: string): Promise<void> {
+    await this.raw(['reset', '--hard', ref]);
+  }
+
+  /**
+   * Run a single-commit interactive rebase action (drop / fixup / reword) using a
+   * scripted sequence editor. If the rebase stops (e.g. a conflict), it is aborted
+   * so the repository is never left mid-rebase.
+   */
+  async rebaseAction(
+    base: string,
+    target: string,
+    action: 'drop' | 'fixup' | 'reword',
+    scriptPath: string,
+    message?: string,
+  ): Promise<void> {
+    const script = scriptPath.replace(/\\/g, '/');
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      GIT_SEQUENCE_EDITOR: `node "${script}" seq`,
+      GIT_EDITOR: `node "${script}" msg`,
+      LEGIT_REBASE_TARGET: target,
+      LEGIT_REBASE_ACTION: action,
+    };
+    if (message != null) env.LEGIT_REBASE_MSG = message;
+    try {
+      await execFileAsync('git', ['rebase', '-i', base], {
+        cwd: this.repoRoot,
+        windowsHide: true,
+        maxBuffer: 64 * 1024 * 1024,
+        env,
+      });
+      this.commandLogger?.(`git rebase -i ${base} (${action} ${target.slice(0, 7)})`);
+    } catch (e) {
+      this.commandLogger?.(`git rebase -i ${base} (${action}) [failed -> abort]`);
+      await this.raw(['rebase', '--abort']).catch(() => undefined);
+      throw e;
+    }
+  }
 }
 
 function normalize(p: string): string {

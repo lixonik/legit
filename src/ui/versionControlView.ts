@@ -35,7 +35,9 @@ type Incoming =
         | 'resetTo'
         | 'editMessage'
         | 'undoCommit'
-        | 'squashTo';
+        | 'squashTo'
+        | 'dropCommit'
+        | 'fixupCommit';
       hash: string;
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
@@ -208,16 +210,43 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'editMessage': {
         const head = await this.repo.git.headHash();
-        if (m.hash !== head) {
-          vscode.window.showInformationMessage('legit: only the latest commit can be reworded.');
-          break;
-        }
         const current = await this.repo.git.commitBody(m.hash);
         const message = await vscode.window.showInputBox({ prompt: 'Edit commit message', value: current });
         if (message === undefined || !message.trim()) break;
-        await this.runLogOp(() => this.repo.git.amendMessage(message.trim()), 'reworded the latest commit');
+        if (m.hash === head) {
+          await this.runLogOp(() => this.repo.git.amendMessage(message.trim()), 'reworded the latest commit');
+        } else {
+          await this.runLogOp(
+            () => this.repo.git.rebaseAction(`${m.hash}~1`, m.hash, 'reword', this.rebaseScript(), message.trim()),
+            `reworded ${m.hash.slice(0, 7)}`,
+          );
+        }
         break;
       }
+      case 'dropCommit': {
+        const ok = await vscode.window.showWarningMessage(
+          `Drop commit ${m.hash.slice(0, 7)}? Its changes will be discarded.`,
+          { modal: true },
+          'Drop',
+        );
+        if (ok !== 'Drop') break;
+        const head = await this.repo.git.headHash();
+        if (m.hash === head) {
+          await this.runLogOp(() => this.repo.git.resetHard(`${m.hash}~1`), `dropped ${m.hash.slice(0, 7)}`);
+        } else {
+          await this.runLogOp(
+            () => this.repo.git.rebaseAction(`${m.hash}~1`, m.hash, 'drop', this.rebaseScript()),
+            `dropped ${m.hash.slice(0, 7)}`,
+          );
+        }
+        break;
+      }
+      case 'fixupCommit':
+        await this.runLogOp(
+          () => this.repo.git.rebaseAction(`${m.hash}~2`, m.hash, 'fixup', this.rebaseScript()),
+          `fixed up ${m.hash.slice(0, 7)} into its parent`,
+        );
+        break;
       case 'undoCommit': {
         const head = await this.repo.git.headHash();
         if (m.hash !== head) {
@@ -472,6 +501,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     const name = rel.split('/').pop() ?? rel;
     const sh = (h: string) => (h ? h.slice(0, 7) : '∅');
     await vscode.commands.executeCommand('vscode.diff', left, right, `${name} (${sh(parent)} <-> ${sh(hash)})`);
+  }
+
+  private rebaseScript(): string {
+    return vscode.Uri.joinPath(this.context.extensionUri, 'media', 'rebase-editor.js').fsPath;
   }
 
   /** Run a Log action, report it, then refresh both the working tree and the log. */
