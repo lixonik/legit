@@ -12,6 +12,12 @@ const file = process.argv[3];
 if (!file) process.exit(0);
 
 if (mode === 'seq') {
+  // Full plan (reorder dialog): replace the whole todo with a prepared file.
+  const planFile = process.env.LEGIT_REBASE_TODO_FILE;
+  if (planFile) {
+    fs.writeFileSync(file, fs.readFileSync(planFile, 'utf8'));
+    process.exit(0);
+  }
   const target = process.env.LEGIT_REBASE_TARGET || '';
   const action = process.env.LEGIT_REBASE_ACTION || '';
   if (!target || !action) process.exit(0);

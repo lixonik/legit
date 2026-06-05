@@ -489,6 +489,48 @@ export class Git {
       throw e;
     }
   }
+
+  /** Commits in a range, oldest first, for the interactive-rebase dialog. */
+  async rangeCommits(range: string): Promise<{ hash: string; subject: string }[]> {
+    let out = '';
+    try {
+      out = await this.raw(['log', '--reverse', '--format=%H%x1f%s', range]);
+    } catch {
+      return [];
+    }
+    return out
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const [hash, subject] = l.split('\x1f');
+        return { hash, subject: subject ?? '' };
+      });
+  }
+
+  /** Run an interactive rebase from a full prepared todo file (reorder dialog). */
+  async rebaseTodo(base: string, scriptPath: string, todoFile: string): Promise<void> {
+    const script = scriptPath.replace(/\\/g, '/');
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      GIT_SEQUENCE_EDITOR: `node "${script}" seq`,
+      GIT_EDITOR: `node "${script}" msg`,
+      LEGIT_REBASE_TODO_FILE: todoFile,
+    };
+    try {
+      await execFileAsync('git', ['rebase', '-i', base], {
+        cwd: this.repoRoot,
+        windowsHide: true,
+        maxBuffer: 64 * 1024 * 1024,
+        env,
+      });
+      this.commandLogger?.(`git rebase -i ${base} (reorder)`);
+    } catch (e) {
+      this.commandLogger?.(`git rebase -i ${base} (reorder) [failed -> abort]`);
+      await this.raw(['rebase', '--abort']).catch(() => undefined);
+      throw e;
+    }
+  }
 }
 
 function normalize(p: string): string {
