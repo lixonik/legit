@@ -93,6 +93,12 @@
         "icon": "$(tag)"
       }
     ],
+    "keybindings": [
+      {
+        "command": "legit.focus",
+        "key": "alt+9"
+      }
+    ],
     "menus": {
       "view/title": [
         {

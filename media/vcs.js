@@ -83,6 +83,12 @@
   commitBtn.addEventListener('click', () => doCommit(false));
   commitPushBtn.addEventListener('click', () => doCommit(true));
   msg.addEventListener('input', updateCommitState);
+  msg.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!commitBtn.disabled) doCommit(e.shiftKey);
+    }
+  });
   amend.addEventListener('change', () => {
     if (amend.checked && !msg.value.trim()) {
       vscode.postMessage({ type: 'getLastCommitMessage' });
