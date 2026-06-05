@@ -48,6 +48,7 @@ type Incoming =
   | { type: 'tagAt'; hash: string }
   | { type: 'commitHunks'; path: string }
   | { type: 'createPatch'; items: { path: string; untracked: boolean }[] }
+  | { type: 'copyPath'; path: string; absolute: boolean }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -345,6 +346,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'createPatch':
         await this.createPatch(m.items);
+        break;
+      case 'copyPath':
+        await vscode.env.clipboard.writeText(m.absolute ? this.repo.absUri(m.path).fsPath : m.path);
+        vscode.window.showInformationMessage('legit: path copied to clipboard.');
         break;
     }
   }

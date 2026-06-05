@@ -314,6 +314,8 @@
       }
       menu.push({ label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) });
       menu.push({ label: 'Show History', cmd: () => vscode.postMessage({ type: 'fileHistory', path: f.path }) });
+      menu.push({ label: 'Copy Relative Path', cmd: () => vscode.postMessage({ type: 'copyPath', path: f.path, absolute: false }) });
+      menu.push({ label: 'Copy Path', cmd: () => vscode.postMessage({ type: 'copyPath', path: f.path, absolute: true }) });
       if (!f.untracked && !f.conflicted && !f.deleted) {
         menu.push({ label: 'Commit Selected Hunks...', cmd: () => vscode.postMessage({ type: 'commitHunks', path: f.path }) });
       }
