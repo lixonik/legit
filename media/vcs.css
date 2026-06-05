@@ -292,6 +292,46 @@ input[type="checkbox"] {
   outline: none;
 }
 .log-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: row; }
+.log-branches {
+  flex: 0 0 auto;
+  width: 190px;
+  min-width: 120px;
+  overflow: auto;
+  background: var(--tree-bg);
+  border-right: 1px solid var(--border);
+  padding: 2px 0;
+  user-select: none;
+}
+.lb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-group .chev { color: var(--fg-dim); }
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 22px;
+  white-space: nowrap;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-row:hover { background: var(--hover); }
+.lb-row.selected { background: var(--sel); color: #fff; }
+.lb-row.current .lb-name { font-weight: 700; color: var(--fg); }
+.lb-row.selected.current .lb-name { color: #fff; }
+.lb-row .codicon { font-size: 13px; }
+.lb-name { overflow: hidden; text-overflow: ellipsis; }
+.lb-all { padding-left: 8px; }
 .log-left { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .log-header {
   display: flex;

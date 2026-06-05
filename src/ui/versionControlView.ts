@@ -69,6 +69,7 @@ type Incoming =
   | { type: 'commitHunks'; path: string }
   | { type: 'createPatch'; items: { path: string; untracked: boolean }[] }
   | { type: 'copyPath'; path: string; absolute: boolean }
+  | { type: 'setLogScope'; scope: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -107,6 +108,22 @@ export class VersionControlView implements vscode.WebviewViewProvider {
 
   private postShelf(): void {
     this.view?.webview.postMessage({ type: 'shelfData', entries: this.repo.shelves() });
+  }
+
+  /** Send the branch tree (and the active log scope) to the Log tab's left panel. */
+  private async postBranches(): Promise<void> {
+    try {
+      const { current, locals, remotes } = await this.repo.git.branches();
+      this.view?.webview.postMessage({
+        type: 'branchData',
+        current,
+        locals,
+        remotes,
+        scope: this.logScope,
+      });
+    } catch {
+      /* no branches yet (empty repo) */
+    }
   }
 
   private pushConsole(line: string): void {
@@ -183,6 +200,15 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
+        await this.postBranches();
+        break;
+      }
+      case 'setLogScope': {
+        this.logScope = m.scope || '--all';
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        await this.postBranches();
         break;
       }
       case 'logBranchFilter': {
@@ -703,6 +729,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>
     <div class="log-body">
+      <div class="log-branches" id="log-branches"></div>
       <div class="log-left">
         <div class="log-header"><span class="lh-graph"></span><span class="lh-subject">Subject</span><span class="lh-author">Author</span><span class="lh-date">Date</span></div>
         <div class="log-list" id="log-list"></div>

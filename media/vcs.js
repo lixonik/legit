@@ -586,6 +586,56 @@
     if (authors.includes(cur)) logUser.value = cur;
   }
 
+  // ---- Log: JetBrains-style left branches tree ----
+  let branchInfo = null;
+  const branchCollapsed = { Local: false, Remote: false };
+  function renderBranches(data) {
+    if (data) branchInfo = data;
+    const host = document.getElementById('log-branches');
+    if (!host || !branchInfo) return;
+    const scope = branchInfo.scope || '--all';
+    host.innerHTML = '';
+    const all = document.createElement('div');
+    all.className = 'lb-row lb-all' + (scope === '--all' ? ' selected' : '');
+    all.innerHTML = '<i class="codicon codicon-git-branch"></i><span class="lb-name">All branches</span>';
+    all.addEventListener('click', () => vscode.postMessage({ type: 'setLogScope', scope: '--all' }));
+    host.appendChild(all);
+    branchGroup(host, 'Local', branchInfo.locals || [], branchInfo.current, scope, false);
+    branchGroup(host, 'Remote', branchInfo.remotes || [], branchInfo.current, scope, true);
+  }
+  function branchGroup(host, label, branches, current, scope, isRemote) {
+    if (!branches.length) return;
+    const collapsed = branchCollapsed[label];
+    const g = document.createElement('div');
+    g.className = 'lb-group';
+    const chev = document.createElement('span');
+    chev.className = 'chev' + (collapsed ? ' collapsed' : '');
+    chev.textContent = '▾';
+    const name = document.createElement('span');
+    name.textContent = label;
+    g.append(chev, name);
+    g.addEventListener('click', () => {
+      branchCollapsed[label] = !branchCollapsed[label];
+      renderBranches();
+    });
+    host.appendChild(g);
+    if (collapsed) return;
+    for (const b of branches) {
+      const row = document.createElement('div');
+      const isCurrent = !isRemote && b === current;
+      row.className = 'lb-row' + (scope === b ? ' selected' : '') + (isCurrent ? ' current' : '');
+      const i = document.createElement('i');
+      i.className = 'codicon ' + (isRemote ? 'codicon-cloud' : 'codicon-git-branch');
+      const nm = document.createElement('span');
+      nm.className = 'lb-name';
+      nm.textContent = b;
+      row.append(i, nm);
+      row.title = b;
+      row.addEventListener('click', () => vscode.postMessage({ type: 'setLogScope', scope: b }));
+      host.appendChild(row);
+    }
+  }
+
   function renderLog() {
     const filter = logSearch.value.trim().toLowerCase();
     const user = logUser.value;
@@ -844,6 +894,8 @@
     } else if (m.type === 'commitDetailsData') {
       detailsCache[m.hash] = m;
       if (m.hash === selectedHash) renderDetails(m);
+    } else if (m.type === 'branchData') {
+      renderBranches(m);
     } else if (m.type === 'shelfData') {
       shelfEntries = m.entries || [];
       renderShelf();
