@@ -69,7 +69,7 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
       case 'compare': {
         const files = await repo.git.diffRefs(current, ref);
         if (!files.length) {
-          vscode.window.showInformationMessage(`legit: no differences between ${current} and ${ref}.`);
+          vscode.window.showInformationMessage(`JeGit: no differences between ${current} and ${ref}.`);
           return;
         }
         type F = vscode.QuickPickItem & { path: string };
@@ -105,9 +105,9 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
         break;
       }
     }
-    vscode.window.showInformationMessage(`legit: ${pick.a} (${ref}) done.`);
+    vscode.window.showInformationMessage(`JeGit: ${pick.a} (${ref}) done.`);
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }
@@ -118,9 +118,9 @@ async function newBranchFrom(repo: Repository, from: string): Promise<void> {
   if (!name) return;
   try {
     await repo.git.checkoutNew(name.trim(), from);
-    vscode.window.showInformationMessage(`legit: created and checked out ${name.trim()}.`);
+    vscode.window.showInformationMessage(`JeGit: created and checked out ${name.trim()}.`);
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }

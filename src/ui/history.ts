@@ -6,7 +6,7 @@ import { REV_SCHEME } from './quickDiff';
 export async function showFileHistory(repo: Repository, rel: string): Promise<void> {
   const commits = await repo.git.fileLog(rel);
   if (!commits.length) {
-    vscode.window.showInformationMessage('legit: no history for this file.');
+    vscode.window.showInformationMessage('JeGit: no history for this file.');
     return;
   }
   type Item = vscode.QuickPickItem & { hash: string; parent: string };
@@ -43,10 +43,10 @@ export async function showFileHistory(repo: Repository, rel: string): Promise<vo
     if (ok !== 'Restore') return;
     try {
       await repo.git.restoreFile(pick.hash, rel);
-      vscode.window.showInformationMessage(`legit: restored ${name} to ${pick.hash.slice(0, 7)}.`);
+      vscode.window.showInformationMessage(`JeGit: restored ${name} to ${pick.hash.slice(0, 7)}.`);
       await repo.refresh();
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     }
     return;
   }

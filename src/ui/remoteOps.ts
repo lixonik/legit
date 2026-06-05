@@ -12,11 +12,11 @@ export async function pushFlow(repo: Repository): Promise<void> {
       );
       if (ok !== 'Push') return;
       await repo.git.pushSetUpstream();
-      vscode.window.showInformationMessage(`legit: pushed and set upstream origin/${repo.branch}.`);
+      vscode.window.showInformationMessage(`JeGit: pushed and set upstream origin/${repo.branch}.`);
     } else {
       const out = await repo.git.outgoingSubjects();
       if (!out.length) {
-        vscode.window.showInformationMessage('legit: nothing to push.');
+        vscode.window.showInformationMessage('JeGit: nothing to push.');
         return;
       }
       const detail = out.slice(0, 20).join('\n') + (out.length > 20 ? `\n...and ${out.length - 20} more` : '');
@@ -27,10 +27,10 @@ export async function pushFlow(repo: Repository): Promise<void> {
       );
       if (ok !== 'Push') return;
       await repo.git.push();
-      vscode.window.showInformationMessage(`legit: pushed ${out.length} commit(s).`);
+      vscode.window.showInformationMessage(`JeGit: pushed ${out.length} commit(s).`);
     }
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }
@@ -42,7 +42,7 @@ export async function updateFlow(repo: Repository): Promise<void> {
     await repo.git.fetch();
     const ab = await repo.git.aheadBehind();
     if (!ab || ab.behind === 0) {
-      vscode.window.showInformationMessage('legit: already up to date.');
+      vscode.window.showInformationMessage('JeGit: already up to date.');
       return;
     }
     type Item = vscode.QuickPickItem & { rebase: boolean };
@@ -55,9 +55,9 @@ export async function updateFlow(repo: Repository): Promise<void> {
     );
     if (!pick) return;
     await repo.git.pull(pick.rebase);
-    vscode.window.showInformationMessage(`legit: updated (${ab.behind} incoming commit(s)).`);
+    vscode.window.showInformationMessage(`JeGit: updated (${ab.behind} incoming commit(s)).`);
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }

@@ -65,7 +65,7 @@ type Incoming =
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
 export class VersionControlView implements vscode.WebviewViewProvider {
-  static readonly viewId = 'legit.versionControl';
+  static readonly viewId = 'jegit.versionControl';
   private view?: vscode.WebviewView;
   private readonly consoleLog: string[] = [];
   private logScope = '--all';
@@ -116,7 +116,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         await this.repo.refresh();
         break;
       case 'branches':
-        await vscode.commands.executeCommand('legit.branches');
+        await vscode.commands.executeCommand('jegit.branches');
         break;
       case 'requestShelf':
         this.postShelf();
@@ -131,7 +131,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'shelve': {
         if (!m.items?.length) {
-          vscode.window.showWarningMessage('legit: select files to shelve.');
+          vscode.window.showWarningMessage('JeGit: select files to shelve.');
           break;
         }
         const def = this.repo.store.getChangelist(this.repo.store.activeId)?.name ?? 'Shelved changes';
@@ -140,9 +140,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         try {
           await this.repo.shelve(name.trim() || def, m.items);
           this.postShelf();
-          vscode.window.showInformationMessage(`legit: shelved ${m.items.length} file(s).`);
+          vscode.window.showInformationMessage(`JeGit: shelved ${m.items.length} file(s).`);
         } catch (err) {
-          vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+          vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
         }
         break;
       }
@@ -150,10 +150,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         try {
           await this.repo.unshelve(m.id);
           this.postShelf();
-          vscode.window.showInformationMessage('legit: unshelved.');
+          vscode.window.showInformationMessage('JeGit: unshelved.');
         } catch (err) {
           vscode.window.showErrorMessage(
-            `legit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
+            `JeGit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
           );
         }
         break;
@@ -165,7 +165,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       }
       case 'requestLog': {
-        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
@@ -179,7 +179,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Show log for' });
         if (!pick) break;
         this.logScope = pick.scope;
-        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
@@ -197,7 +197,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'copyHash':
         await vscode.env.clipboard.writeText(m.hash);
-        vscode.window.showInformationMessage(`legit: copied ${m.hash.slice(0, 10)}`);
+        vscode.window.showInformationMessage(`JeGit: copied ${m.hash.slice(0, 10)}`);
         break;
       case 'checkoutRev':
         await this.runLogOp(() => this.repo.git.checkout(m.hash), `checked out ${m.hash.slice(0, 7)} (detached)`);
@@ -277,7 +277,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'interactiveRebase': {
         await showRebaseDialog(this.context, this.repo, m.hash);
-        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
         const commits = await this.repo.git.log(limit, this.logScope);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
@@ -285,7 +285,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'undoCommit': {
         const head = await this.repo.git.headHash();
         if (m.hash !== head) {
-          vscode.window.showInformationMessage('legit: only the latest commit can be undone.');
+          vscode.window.showInformationMessage('JeGit: only the latest commit can be undone.');
           break;
         }
         const ok = await vscode.window.showWarningMessage(
@@ -300,11 +300,11 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'squashTo': {
         const head = await this.repo.git.headHash();
         if (m.hash === head) {
-          vscode.window.showInformationMessage('legit: pick an older commit; this squashes it and all newer commits into one.');
+          vscode.window.showInformationMessage('JeGit: pick an older commit; this squashes it and all newer commits into one.');
           break;
         }
         if (!(await this.repo.git.isAncestor(m.hash, 'HEAD'))) {
-          vscode.window.showInformationMessage('legit: that commit is not in the current branch history.');
+          vscode.window.showInformationMessage('JeGit: that commit is not in the current branch history.');
           break;
         }
         const combined = await this.repo.git.rangeMessages(`${m.hash}~1..HEAD`);
@@ -332,7 +332,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'deleteChangelist':
         if (m.id === DEFAULT_CHANGELIST_ID) {
-          vscode.window.showWarningMessage('legit: the default changelist cannot be deleted.');
+          vscode.window.showWarningMessage('JeGit: the default changelist cannot be deleted.');
         } else {
           await this.repo.remove(m.id);
         }
@@ -383,28 +383,28 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       case 'copyPath':
         await vscode.env.clipboard.writeText(m.absolute ? this.repo.absUri(m.path).fsPath : m.path);
-        vscode.window.showInformationMessage('legit: path copied to clipboard.');
+        vscode.window.showInformationMessage('JeGit: path copied to clipboard.');
         break;
     }
   }
 
   private async commit(m: CommitMsg): Promise<void> {
     if (!m.paths?.length) {
-      vscode.window.showWarningMessage('legit: select at least one file to commit.');
+      vscode.window.showWarningMessage('JeGit: select at least one file to commit.');
       return;
     }
     if (!m.message?.trim()) {
-      vscode.window.showWarningMessage('legit: enter a commit message first.');
+      vscode.window.showWarningMessage('JeGit: enter a commit message first.');
       return;
     }
     try {
       await this.repo.commit(m.paths, m.message.trim(), { amend: m.amend, push: m.push, signoff: m.signoff });
       this.view?.webview.postMessage({ type: 'committed' });
       vscode.window.showInformationMessage(
-        `legit: committed ${m.paths.length} file(s)${m.push ? ' and pushed' : ''}.`,
+        `JeGit: committed ${m.paths.length} file(s)${m.push ? ' and pushed' : ''}.`,
       );
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -412,12 +412,12 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   private async commitHunks(rel: string): Promise<void> {
     const diff = await this.repo.git.diffHead([rel]);
     if (!diff.trim()) {
-      vscode.window.showInformationMessage('legit: no changes to commit in this file.');
+      vscode.window.showInformationMessage('JeGit: no changes to commit in this file.');
       return;
     }
     const { header, hunks } = splitHunks(diff);
     if (!hunks.length) {
-      vscode.window.showInformationMessage('legit: no hunks found.');
+      vscode.window.showInformationMessage('JeGit: no hunks found.');
       return;
     }
     type Hunk = vscode.QuickPickItem & { index: number };
@@ -436,14 +436,14 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     if (!message || !message.trim()) return;
 
     const patch = header + '\n' + picked.map((p) => hunks[p.index].lines.join('\n')).join('\n') + '\n';
-    const tmp = path.join(os.tmpdir(), `legit-hunks-${Date.now()}.patch`);
+    const tmp = path.join(os.tmpdir(), `jegit-hunks-${Date.now()}.patch`);
     try {
       fs.writeFileSync(tmp, patch, 'utf8');
       await this.repo.git.applyCached(tmp);
       await this.repo.git.commitIndex(message.trim());
-      vscode.window.showInformationMessage(`legit: committed ${picked.length} hunk(s) of ${rel.split('/').pop()}.`);
+      vscode.window.showInformationMessage(`JeGit: committed ${picked.length} hunk(s) of ${rel.split('/').pop()}.`);
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: partial commit failed: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: partial commit failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       try {
         fs.unlinkSync(tmp);
@@ -464,7 +464,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       const patch = await this.repo.git.diffHead(all);
       if (untracked.length) await this.repo.git.raw(['reset', '-q', '--', ...untracked]).catch(() => undefined);
       if (!patch.trim()) {
-        vscode.window.showInformationMessage('legit: nothing to put in the patch.');
+        vscode.window.showInformationMessage('JeGit: nothing to put in the patch.');
         return;
       }
       const uri = await vscode.window.showSaveDialog({
@@ -473,9 +473,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       });
       if (!uri) return;
       fs.writeFileSync(uri.fsPath, patch, 'utf8');
-      vscode.window.showInformationMessage(`legit: created patch ${uri.fsPath.split(/[\\/]/).pop()}.`);
+      vscode.window.showInformationMessage(`JeGit: created patch ${uri.fsPath.split(/[\\/]/).pop()}.`);
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -517,7 +517,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         }
       }
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       await this.repo.refresh();
     }
@@ -550,12 +550,12 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   private async runLogOp(op: () => Promise<void>, ok: string): Promise<void> {
     try {
       await op();
-      vscode.window.showInformationMessage(`legit: ${ok}.`);
+      vscode.window.showInformationMessage(`JeGit: ${ok}.`);
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       await this.repo.refresh();
-      const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+      const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
       const commits = await this.repo.git.log(limit, this.logScope);
       this.view?.webview.postMessage({ type: 'logData', commits });
     }
@@ -576,7 +576,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
 <link href="${codiconUri}" rel="stylesheet" />
 <link href="${cssUri}" rel="stylesheet" />
-<title>legit</title>
+<title>JeGit</title>
 </head>
 <body>
   <div class="tabbar">

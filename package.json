@@ -1,13 +1,13 @@
 {
-  "name": "legit",
-  "displayName": "legit – JetBrains-style Git",
+  "name": "jegit",
+  "displayName": "JeGit – JetBrains-style Git",
   "description": "JetBrains-style Git workflow for VS Code: changelists, shelve, rich commit, log graph.",
   "version": "0.1.0",
   "publisher": "lixonik",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lixonik/legit.git"
+    "url": "https://github.com/lixonik/jegit.git"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -21,33 +21,33 @@
   ],
   "contributes": {
     "configuration": {
-      "title": "legit",
+      "title": "JeGit",
       "properties": {
-        "legit.log.maxCount": {
+        "jegit.log.maxCount": {
           "type": "number",
           "default": 400,
           "description": "Maximum number of commits to load in the Log tab."
         },
-        "legit.panel.autoReveal": {
+        "jegit.panel.autoReveal": {
           "type": "boolean",
           "default": true,
-          "description": "Reveal the legit panel automatically when a git repository opens."
+          "description": "Reveal the jegit panel automatically when a git repository opens."
         }
       }
     },
     "viewsContainers": {
       "panel": [
         {
-          "id": "legitPanel",
-          "title": "legit",
-          "icon": "media/legit.svg"
+          "id": "jegitPanel",
+          "title": "JeGit",
+          "icon": "media/jegit.svg"
         }
       ]
     },
     "views": {
-      "legitPanel": [
+      "jegitPanel": [
         {
-          "id": "legit.versionControl",
+          "id": "jegit.versionControl",
           "name": "Version Control",
           "type": "webview"
         }
@@ -55,119 +55,119 @@
     },
     "commands": [
       {
-        "command": "legit.refresh",
+        "command": "jegit.refresh",
         "title": "Refresh",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(refresh)"
       },
       {
-        "command": "legit.newChangelist",
+        "command": "jegit.newChangelist",
         "title": "New Changelist...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(add)"
       },
       {
-        "command": "legit.focus",
+        "command": "jegit.focus",
         "title": "Show Version Control",
-        "category": "legit"
+        "category": "JeGit"
       },
       {
-        "command": "legit.branches",
+        "command": "jegit.branches",
         "title": "Branches...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(git-branch)"
       },
       {
-        "command": "legit.update",
+        "command": "jegit.update",
         "title": "Update Project (Pull)",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(sync)"
       },
       {
-        "command": "legit.push",
+        "command": "jegit.push",
         "title": "Push...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(repo-push)"
       },
       {
-        "command": "legit.toggleBlame",
+        "command": "jegit.toggleBlame",
         "title": "Annotate with Git Blame",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(git-commit)"
       },
       {
-        "command": "legit.fileHistory",
+        "command": "jegit.fileHistory",
         "title": "Show File History",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(history)"
       },
       {
-        "command": "legit.newTag",
+        "command": "jegit.newTag",
         "title": "New Tag...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(tag)"
       },
       {
-        "command": "legit.applyPatch",
+        "command": "jegit.applyPatch",
         "title": "Apply Patch...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(diff)"
       },
       {
-        "command": "legit.stash",
+        "command": "jegit.stash",
         "title": "Stash Changes...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(archive)"
       },
       {
-        "command": "legit.unstash",
+        "command": "jegit.unstash",
         "title": "Unstash...",
-        "category": "legit",
+        "category": "JeGit",
         "icon": "$(archive)"
       }
     ],
     "keybindings": [
       {
-        "command": "legit.focus",
+        "command": "jegit.focus",
         "key": "alt+9"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "legit.branches",
-          "when": "view == legit.versionControl",
+          "command": "jegit.branches",
+          "when": "view == jegit.versionControl",
           "group": "navigation@1"
         },
         {
-          "command": "legit.newChangelist",
-          "when": "view == legit.versionControl",
+          "command": "jegit.newChangelist",
+          "when": "view == jegit.versionControl",
           "group": "navigation@2"
         },
         {
-          "command": "legit.refresh",
-          "when": "view == legit.versionControl",
+          "command": "jegit.refresh",
+          "when": "view == jegit.versionControl",
           "group": "navigation@3"
         },
         {
-          "command": "legit.update",
-          "when": "view == legit.versionControl",
+          "command": "jegit.update",
+          "when": "view == jegit.versionControl",
           "group": "navigation@4"
         },
         {
-          "command": "legit.push",
-          "when": "view == legit.versionControl",
+          "command": "jegit.push",
+          "when": "view == jegit.versionControl",
           "group": "navigation@5"
         }
       ],
       "editor/context": [
         {
-          "command": "legit.toggleBlame",
+          "command": "jegit.toggleBlame",
           "when": "resourceScheme == file",
           "group": "navigation@9"
         },
         {
-          "command": "legit.fileHistory",
+          "command": "jegit.fileHistory",
           "when": "resourceScheme == file",
           "group": "navigation@10"
         }

@@ -7,9 +7,9 @@ export async function stashChanges(repo: Repository): Promise<void> {
   if (message === undefined) return;
   try {
     await repo.git.stashPush(message.trim());
-    vscode.window.showInformationMessage('legit: changes stashed.');
+    vscode.window.showInformationMessage('JeGit: changes stashed.');
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }
@@ -19,7 +19,7 @@ export async function stashChanges(repo: Repository): Promise<void> {
 export async function unstash(repo: Repository): Promise<void> {
   const stashes = await repo.git.stashList();
   if (!stashes.length) {
-    vscode.window.showInformationMessage('legit: no stashes.');
+    vscode.window.showInformationMessage('JeGit: no stashes.');
     return;
   }
   type Item = vscode.QuickPickItem & { ref: string };
@@ -48,9 +48,9 @@ export async function unstash(repo: Repository): Promise<void> {
       if (ok !== 'Drop') return;
       await repo.git.stashDrop(pick.ref);
     }
-    vscode.window.showInformationMessage(`legit: stash ${action.a} done.`);
+    vscode.window.showInformationMessage(`JeGit: stash ${action.a} done.`);
   } catch (err) {
-    vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     await repo.refresh();
   }

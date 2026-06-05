@@ -1,4 +1,4 @@
-// Non-interactive editor used by legit for git rebase -i.
+// Non-interactive editor used by jegit for git rebase -i.
 // Invoked two ways, distinguished by the first arg:
 //   node rebase-editor.js seq <todo-file>   (GIT_SEQUENCE_EDITOR)
 //   node rebase-editor.js msg <message-file> (GIT_EDITOR)
@@ -13,13 +13,13 @@ if (!file) process.exit(0);
 
 if (mode === 'seq') {
   // Full plan (reorder dialog): replace the whole todo with a prepared file.
-  const planFile = process.env.LEGIT_REBASE_TODO_FILE;
+  const planFile = process.env.JEGIT_REBASE_TODO_FILE;
   if (planFile) {
     fs.writeFileSync(file, fs.readFileSync(planFile, 'utf8'));
     process.exit(0);
   }
-  const target = process.env.LEGIT_REBASE_TARGET || '';
-  const action = process.env.LEGIT_REBASE_ACTION || '';
+  const target = process.env.JEGIT_REBASE_TARGET || '';
+  const action = process.env.JEGIT_REBASE_ACTION || '';
   if (!target || !action) process.exit(0);
   const lines = fs.readFileSync(file, 'utf8').split('\n');
   const out = [];
@@ -40,6 +40,6 @@ if (mode === 'seq') {
   }
   fs.writeFileSync(file, out.join('\n'));
 } else if (mode === 'msg') {
-  const msg = process.env.LEGIT_REBASE_MSG;
+  const msg = process.env.JEGIT_REBASE_MSG;
   if (msg != null && msg !== '') fs.writeFileSync(file, msg);
 }

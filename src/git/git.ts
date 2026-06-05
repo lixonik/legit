@@ -471,10 +471,10 @@ export class Git {
       ...process.env,
       GIT_SEQUENCE_EDITOR: `node "${script}" seq`,
       GIT_EDITOR: `node "${script}" msg`,
-      LEGIT_REBASE_TARGET: target,
-      LEGIT_REBASE_ACTION: action,
+      JEGIT_REBASE_TARGET: target,
+      JEGIT_REBASE_ACTION: action,
     };
-    if (message != null) env.LEGIT_REBASE_MSG = message;
+    if (message != null) env.JEGIT_REBASE_MSG = message;
     try {
       await execFileAsync('git', ['rebase', '-i', base], {
         cwd: this.repoRoot,
@@ -515,7 +515,7 @@ export class Git {
       ...process.env,
       GIT_SEQUENCE_EDITOR: `node "${script}" seq`,
       GIT_EDITOR: `node "${script}" msg`,
-      LEGIT_REBASE_TODO_FILE: todoFile,
+      JEGIT_REBASE_TODO_FILE: todoFile,
     };
     try {
       await execFileAsync('git', ['rebase', '-i', base], {

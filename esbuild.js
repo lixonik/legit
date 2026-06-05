@@ -21,10 +21,10 @@ const options = {
   if (watch) {
     const ctx = await esbuild.context(options);
     await ctx.watch();
-    console.log('[legit] watching for changes…');
+    console.log('[jegit] watching for changes…');
   } else {
     await esbuild.build(options);
-    console.log('[legit] build complete');
+    console.log('[jegit] build complete');
   }
 })().catch((err) => {
   console.error(err);

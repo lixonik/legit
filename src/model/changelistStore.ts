@@ -12,7 +12,7 @@ interface PersistedState {
   assignments: Record<string, string>;
 }
 
-const STORAGE_KEY = 'legit.changelists.v1';
+const STORAGE_KEY = 'jegit.changelists.v1';
 export const DEFAULT_CHANGELIST_ID = 'default';
 
 /**

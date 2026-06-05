@@ -31,12 +31,12 @@ export class BlameController implements vscode.Disposable {
     }
     const rel = this.repo.relPathOf(ed.document.uri);
     if (rel.startsWith('..')) {
-      vscode.window.showInformationMessage('legit: file is outside the repository.');
+      vscode.window.showInformationMessage('JeGit: file is outside the repository.');
       return;
     }
     const blame = await this.repo.git.blame(rel);
     if (!blame.length) {
-      vscode.window.showInformationMessage('legit: no blame information (file may be untracked).');
+      vscode.window.showInformationMessage('JeGit: no blame information (file may be untracked).');
       return;
     }
     const lineCount = Math.min(ed.document.lineCount, blame.length);

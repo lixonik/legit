@@ -17,11 +17,11 @@ export async function showRebaseDialog(
   const base = `${baseHash}~1`;
   const commits = await repo.git.rangeCommits(`${base}..HEAD`);
   if (!commits.length) {
-    vscode.window.showInformationMessage('legit: nothing to rebase from here (or this is the root commit).');
+    vscode.window.showInformationMessage('JeGit: nothing to rebase from here (or this is the root commit).');
     return;
   }
 
-  const panel = vscode.window.createWebviewPanel('legitRebase', 'Interactive Rebase', vscode.ViewColumn.Active, {
+  const panel = vscode.window.createWebviewPanel('jegitRebase', 'Interactive Rebase', vscode.ViewColumn.Active, {
     enableScripts: true,
   });
   panel.webview.html = html(commits);
@@ -35,25 +35,25 @@ export async function showRebaseDialog(
 
     const kept = m.plan.filter((p) => p.action !== 'drop');
     if (!kept.length) {
-      vscode.window.showWarningMessage('legit: keep at least one commit.');
+      vscode.window.showWarningMessage('JeGit: keep at least one commit.');
       return;
     }
     if (kept[0].action !== 'pick') {
-      vscode.window.showWarningMessage('legit: the first kept commit must be "pick".');
+      vscode.window.showWarningMessage('JeGit: the first kept commit must be "pick".');
       return;
     }
 
     const todo = m.plan.map((p) => `${p.action} ${p.hash}`).join('\n') + '\n';
-    const tmp = path.join(os.tmpdir(), `legit-rebase-${Date.now()}.txt`);
+    const tmp = path.join(os.tmpdir(), `jegit-rebase-${Date.now()}.txt`);
     try {
       fs.writeFileSync(tmp, todo, 'utf8');
       const script = vscode.Uri.joinPath(context.extensionUri, 'media', 'rebase-editor.js').fsPath;
       await repo.git.rebaseTodo(base, script, tmp);
-      vscode.window.showInformationMessage('legit: rebase applied.');
+      vscode.window.showInformationMessage('JeGit: rebase applied.');
       panel.dispose();
     } catch (err) {
       vscode.window.showErrorMessage(
-        `legit: rebase could not be applied cleanly (${err instanceof Error ? err.message : String(err)}); it was aborted.`,
+        `JeGit: rebase could not be applied cleanly (${err instanceof Error ? err.message : String(err)}); it was aborted.`,
       );
     } finally {
       try {

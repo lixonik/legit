@@ -13,7 +13,7 @@ interface Persisted {
   entries: ShelfEntry[];
 }
 
-const STORAGE_KEY = 'legit.shelf.v1';
+const STORAGE_KEY = 'jegit.shelf.v1';
 
 /**
  * Stores shelved changes: metadata in workspaceState, the patch body as a file in

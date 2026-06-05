@@ -17,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   if (!folder) return;
 
   const repoRoot = await Git.findRepoRoot(folder.uri.fsPath);
-  if (!repoRoot) return; // not a git repo -- legit stays dormant
+  if (!repoRoot) return; // not a git repo -- jegit stays dormant
 
   const git = new Git(repoRoot);
   const store = new ChangelistStore(context.workspaceState);
@@ -35,13 +35,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   const branchItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  branchItem.command = 'legit.branches';
-  branchItem.tooltip = 'legit: Git branches';
+  branchItem.command = 'jegit.branches';
+  branchItem.tooltip = 'JeGit: Git branches';
   context.subscriptions.push(branchItem);
   const updateBranch = () => {
     const s = repo.sync;
     const ab = s && (s.ahead || s.behind) ? `  $(arrow-down)${s.behind} $(arrow-up)${s.ahead}` : '';
-    branchItem.text = repo.branch ? `$(git-branch) ${repo.branch}${ab}` : '$(git-branch) legit';
+    branchItem.text = repo.branch ? `$(git-branch) ${repo.branch}${ab}` : '$(git-branch) JeGit';
     branchItem.show();
   };
   context.subscriptions.push(repo.onDidChange(updateBranch));
@@ -49,27 +49,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const reg = (id: string, fn: (...args: any[]) => any) =>
     context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
-  reg('legit.refresh', () => repo.refresh());
-  reg('legit.newChangelist', async () => {
+  reg('jegit.refresh', () => repo.refresh());
+  reg('jegit.newChangelist', async () => {
     const name = await vscode.window.showInputBox({ prompt: 'New changelist name', placeHolder: 'Feature X' });
     if (name) await repo.newChangelist(name.trim());
   });
-  reg('legit.branches', () => showBranches(repo));
-  reg('legit.newTag', async () => {
+  reg('jegit.branches', () => showBranches(repo));
+  reg('jegit.newTag', async () => {
     const name = await vscode.window.showInputBox({ prompt: 'New tag name', placeHolder: 'v1.0.0' });
     if (!name) return;
     const message = await vscode.window.showInputBox({ prompt: 'Tag message (optional, empty = lightweight tag)' });
     try {
       await git.createTag(name.trim(), '', message?.trim() || undefined);
-      vscode.window.showInformationMessage(`legit: created tag ${name.trim()}.`);
+      vscode.window.showInformationMessage(`JeGit: created tag ${name.trim()}.`);
       await repo.refresh();
     } catch (err) {
-      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
-  reg('legit.push', () => pushFlow(repo));
-  reg('legit.update', () => updateFlow(repo));
-  reg('legit.applyPatch', async () => {
+  reg('jegit.push', () => pushFlow(repo));
+  reg('jegit.update', () => updateFlow(repo));
+  reg('jegit.applyPatch', async () => {
     const uris = await vscode.window.showOpenDialog({
       canSelectMany: false,
       filters: { Patch: ['patch', 'diff'] },
@@ -78,37 +78,37 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (!uris || !uris.length) return;
     try {
       await git.applyPatch(uris[0].fsPath);
-      vscode.window.showInformationMessage('legit: patch applied.');
+      vscode.window.showInformationMessage('JeGit: patch applied.');
       await repo.refresh();
     } catch (err) {
       vscode.window.showErrorMessage(
-        `legit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
+        `JeGit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
       );
     }
   });
 
   const blame = new BlameController(repo);
   context.subscriptions.push(blame);
-  reg('legit.toggleBlame', () => blame.toggle());
-  reg('legit.fileHistory', () => {
+  reg('jegit.toggleBlame', () => blame.toggle());
+  reg('jegit.fileHistory', () => {
     const uri = vscode.window.activeTextEditor?.document.uri;
     if (!uri || uri.scheme !== 'file') {
-      vscode.window.showInformationMessage('legit: open a file to see its history.');
+      vscode.window.showInformationMessage('JeGit: open a file to see its history.');
       return undefined;
     }
     return showFileHistory(repo, repo.relPathOf(uri));
   });
 
-  reg('legit.stash', () => stashChanges(repo));
-  reg('legit.unstash', () => unstash(repo));
-  reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
+  reg('jegit.stash', () => stashChanges(repo));
+  reg('jegit.unstash', () => unstash(repo));
+  reg('jegit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 
   await repo.refresh();
   updateBranch();
 
-  // Reveal the legit panel so it is discoverable instead of hidden behind the
+  // Reveal the jegit panel so it is discoverable instead of hidden behind the
   // Terminal tab in the bottom panel.
-  if (vscode.workspace.getConfiguration('legit').get('panel.autoReveal', true)) {
+  if (vscode.workspace.getConfiguration('jegit').get('panel.autoReveal', true)) {
     void vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`);
   }
 }
