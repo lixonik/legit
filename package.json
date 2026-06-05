@@ -2,7 +2,7 @@
   "name": "legit",
   "displayName": "legit – JetBrains-style Git",
   "description": "JetBrains-style Git workflow for VS Code: changelists, shelve, rich commit, log graph.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "lixonik",
   "license": "MIT",
   "repository": {
