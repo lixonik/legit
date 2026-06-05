@@ -79,6 +79,12 @@
         "title": "Annotate with Git Blame",
         "category": "legit",
         "icon": "$(git-commit)"
+      },
+      {
+        "command": "legit.fileHistory",
+        "title": "Show File History",
+        "category": "legit",
+        "icon": "$(history)"
       }
     ],
     "menus": {
@@ -114,6 +120,11 @@
           "command": "legit.toggleBlame",
           "when": "resourceScheme == file",
           "group": "navigation@9"
+        },
+        {
+          "command": "legit.fileHistory",
+          "when": "resourceScheme == file",
+          "group": "navigation@10"
         }
       ]
     }

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { Repository } from '../model/repository';
 import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
 import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
+import { showFileHistory } from './history';
 
 interface CommitMsg {
   type: 'commit';
@@ -27,6 +28,7 @@ type Incoming =
   | { type: 'unshelve' | 'deleteShelf'; id: string }
   | { type: 'openFile'; path: string }
   | { type: 'markResolved'; paths: string[] }
+  | { type: 'fileHistory'; path: string }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -229,6 +231,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'markResolved':
         await this.repo.git.add(m.paths);
         await this.repo.refresh();
+        break;
+      case 'fileHistory':
+        await showFileHistory(this.repo, m.path);
         break;
       case 'rollback':
         await this.rollback(m.items);

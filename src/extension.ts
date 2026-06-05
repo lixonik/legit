@@ -9,6 +9,7 @@ import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { pushFlow, updateFlow } from './ui/remoteOps';
 import { BlameController } from './ui/blame';
+import { showFileHistory } from './ui/history';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const folder = vscode.workspace.workspaceFolders?.[0];
@@ -59,6 +60,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const blame = new BlameController(repo);
   context.subscriptions.push(blame);
   reg('legit.toggleBlame', () => blame.toggle());
+  reg('legit.fileHistory', () => {
+    const uri = vscode.window.activeTextEditor?.document.uri;
+    if (!uri || uri.scheme !== 'file') {
+      vscode.window.showInformationMessage('legit: open a file to see its history.');
+      return undefined;
+    }
+    return showFileHistory(repo, repo.relPathOf(uri));
+  });
 
   reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 

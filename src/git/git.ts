@@ -316,6 +316,29 @@ export class Git {
     }
     return result;
   }
+
+  async fileLog(
+    relPath: string,
+    limit = 100,
+  ): Promise<{ hash: string; parent: string; author: string; date: string; subject: string }[]> {
+    const FS = '\x1f';
+    const RS = '\x1e';
+    const fmt = ['%H', '%P', '%an', '%cI', '%s'].join(FS) + RS;
+    let out = '';
+    try {
+      out = await this.raw(['log', `--max-count=${limit}`, `--pretty=format:${fmt}`, '--', relPath]);
+    } catch {
+      return [];
+    }
+    const res: { hash: string; parent: string; author: string; date: string; subject: string }[] = [];
+    for (const rec of out.split(RS)) {
+      const line = rec.replace(/^\s+/, '');
+      if (!line) continue;
+      const [hash, parents, author, date, subject] = line.split(FS);
+      res.push({ hash, parent: parents ? parents.split(' ')[0] : '', author, date, subject: subject ?? '' });
+    }
+    return res;
+  }
 }
 
 function normalize(p: string): string {

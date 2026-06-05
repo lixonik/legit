@@ -296,6 +296,7 @@
         menu.push({ label: 'Mark as Resolved', cmd: () => vscode.postMessage({ type: 'markResolved', paths: [f.path] }) });
       }
       menu.push({ label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: f.untracked }) });
+      menu.push({ label: 'Show History', cmd: () => vscode.postMessage({ type: 'fileHistory', path: f.path }) });
       menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
       menu.push({ label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) });
       menu.push({ label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) });
