@@ -624,6 +624,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   <div class="tabpanel" data-tab="log">
     <div class="log-toolbar">
       <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
+      <select id="log-user" class="log-select" title="Filter by author"><option value="">All users</option></select>
       <button class="tool" id="log-branch" title="Show log for a branch"><i class="codicon codicon-git-branch"></i></button>
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>

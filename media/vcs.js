@@ -36,6 +36,7 @@
   const logList = $('log-list');
   const logDetails = $('log-details');
   const logSearch = $('log-search');
+  const logUser = $('log-user');
   const shelfList = $('shelf-list');
   const consoleLogEl = $('console-log');
 
@@ -105,6 +106,7 @@
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
   $('log-branch').addEventListener('click', () => vscode.postMessage({ type: 'logBranchFilter' }));
   logSearch.addEventListener('input', renderLog);
+  logUser.addEventListener('change', renderLog);
 
   // Clicking the branch label opens the Branches popup (like the JetBrains widget).
   branchLabel.addEventListener('click', () => vscode.postMessage({ type: 'branches' }));
@@ -552,16 +554,35 @@
   }
 
   // ---- Log rendering ----
+  function populateUsers() {
+    const cur = logUser.value;
+    const authors = [...new Set(logCommits.map((c) => c.author))].sort((a, b) => a.localeCompare(b));
+    logUser.innerHTML = '';
+    const all = document.createElement('option');
+    all.value = '';
+    all.textContent = 'All users';
+    logUser.appendChild(all);
+    for (const a of authors) {
+      const o = document.createElement('option');
+      o.value = a;
+      o.textContent = a;
+      logUser.appendChild(o);
+    }
+    if (authors.includes(cur)) logUser.value = cur;
+  }
+
   function renderLog() {
     const filter = logSearch.value.trim().toLowerCase();
+    const user = logUser.value;
     logList.innerHTML = '';
     for (let i = 0; i < logCommits.length; i++) {
       const c = logCommits[i];
+      if (user && c.author !== user) continue;
       if (filter) {
         const hay = (c.subject + ' ' + c.author + ' ' + c.hash).toLowerCase();
         if (!hay.includes(filter)) continue;
       }
-      logList.appendChild(logRow(c, graphRows[i], !filter));
+      logList.appendChild(logRow(c, graphRows[i], !filter && !user));
     }
   }
 
@@ -769,6 +790,7 @@
       logCommits = m.commits || [];
       detailsCache = {};
       graphRows = computeGraph(logCommits);
+      populateUsers();
       renderLog();
     } else if (m.type === 'commitDetailsData') {
       detailsCache[m.hash] = m;
