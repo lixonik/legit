@@ -22,7 +22,9 @@
 
   // Replace the next conflict block with the chosen side (1 = ours, 2 = theirs).
   function resolveNext(side) {
-    const re = /<<<<<<<[^\n]*\n([\s\S]*?)(?:\n\|\|\|\|\|\|\|[^\n]*\n[\s\S]*?)?\n=======\n([\s\S]*?)\n>>>>>>>[^\n]*/;
+    // Markers sit on their own lines; capture each side including its trailing
+    // newline so a conflict with an empty side (deletion/addition) still matches.
+    const re = /<<<<<<<[^\n]*\n([\s\S]*?)(?:\|\|\|\|\|\|\|[^\n]*\n[\s\S]*?)?=======\n([\s\S]*?)>>>>>>>[^\n]*\n?/;
     const m = re.exec(result.value);
     if (!m) return;
     const repl = side === 1 ? m[1] : m[2];
