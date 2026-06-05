@@ -11,25 +11,26 @@ Darcula-styled, tabbed UI: **Local Changes / Log / Shelf / Console**.
 ## Features
 
 ### Local Changes
-- **Changelists** rendered as a directory tree (toggle to a flat list), each with
-  a tri-state checkbox; the active list carries an *Active* badge and collects
-  every change not explicitly assigned elsewhere.
-- Create / rename / delete / set-active changelists; move files by menu or drag and drop.
-- Files are colored by status (modified / added / deleted / unversioned) with
-  real folder/file icons; **merge conflicts** are detected and can be opened in
-  VS Code's merge UI or marked resolved.
-- **Commit** the checked files, **Commit and Push**, **Amend** (prefilled), a
-  **Sign-off** option, and per-hunk **Commit Selected Hunks**.
-- **Rollback**, **Shelve**, **Create Patch**; click a file for a HEAD diff.
-- Keyboard: `Ctrl+Enter` commits, `Ctrl+Shift+Enter` commits and pushes.
+- **Changelists** as a directory tree (toggle to a flat list), tri-state
+  checkboxes, an active list, and move by menu or drag and drop.
+- Files colored by status with folder/file icons; **merge conflicts** detected.
+- **Commit** the checked files, **Commit and Push**, **Amend** (prefilled),
+  **Sign-off**, **commit as another author**, and per-hunk **Commit Selected Hunks**.
+- **Rollback**, **Shelve**, **Create Patch**, **Add to .gitignore**; click a file
+  for a HEAD diff.
+- `Ctrl+Enter` commits, `Ctrl+Shift+Enter` commits and pushes.
 
 ### Log
-- Commit graph with colored branch lanes, ref chips, Subject / Author / Date
-  columns, and a details panel on the right (click a changed file to diff it).
-- Filter by free text and by branch.
+- Commit graph with ref chips, Subject / Author / Date columns, and a details
+  panel on the right showing the changed files as a tree (click to diff).
+- Filters: free text, **Branch**, **User**, **Date**, and **Path**.
 - Commit context menu: Checkout, New Branch, Cherry-Pick, Revert, Reset, Edit
   Commit Message (any commit), Undo Commit, Squash, Fixup, Drop, **Interactively
-  Rebase from Here** (reorder + pick/fixup/drop), New Tag, Copy Revision.
+  Rebase from Here** (drag-reorder + pick/fixup/drop), New Tag, Copy Revision.
+
+### Conflicts
+- A **three-pane merge resolver** (Yours | editable Result | Theirs) with
+  per-conflict and whole-file accept, opened from a conflicted file.
 
 ### Shelf and Console
 - Shelve / Unshelve patches that survive branch switches.
@@ -38,24 +39,27 @@ Darcula-styled, tabbed UI: **Local Changes / Log / Shelf / Console**.
 ### Branches and remotes
 - A status-bar widget (`branch ↓behind ↑ahead`) and the panel header open the
   **Branches popup**: Checkout, New, Merge, Rebase, Rename, Delete, Compare.
-- **Update** (fetch then pull) and **Push** with an outgoing-commit preview.
+- **Update** (fetch + pull), **Push** (with an outgoing-commit preview),
+  **Force Push**, **Push Tags**, and **Manage Remotes** (add / rename / change
+  URL / remove).
 
 ### Editor
-- **Annotate with Git Blame** and **Show File History** (with restore to a revision).
-- **Apply Patch**, **Stash / Unstash**, **Copy Path**.
+- **Annotate with Git Blame**, **Show File History** (with restore to a revision),
+  **Apply Patch**, **Stash / Unstash**, and **Copy Path**.
 
 ## Development
 
 ```bash
 npm install
-npm run compile        # one-shot bundle to dist/
+npm run compile        # bundle to dist/
 npm run watch          # incremental rebuilds
 npm run typecheck      # tsc --noEmit
+npm test               # vitest unit tests
 ```
 
-Press **F5** in VS Code (with this folder open) to launch an Extension Development
-Host with JeGit loaded, then open any git repository. The **JeGit** panel opens in
-the bottom tool-window area (also `Alt+9`, or the JEGIT tab next to Terminal).
+Press **F5** to launch an Extension Development Host with JeGit loaded, then open
+any git repository. The **JeGit** panel opens in the bottom tool-window area
+(also `Alt+9`, or the JEGIT tab next to Terminal).
 
 ## Settings
 

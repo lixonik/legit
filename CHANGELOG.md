@@ -2,32 +2,34 @@
 
 ## 0.1.0
 
-First feature-complete preview of the JetBrains-style Git tool window.
+A feature-complete JetBrains-style Git tool window.
 
 ### Local Changes
-- Changelists as a directory tree or flat list, with tri-state checkboxes and an active list.
-- Create / rename / delete / set-active changelists; move files by menu or drag and drop.
-- Commit, Commit and Push, Amend (message prefilled), Sign-off, and per-hunk Commit Selected Hunks.
-- Rollback, Shelve, Create Patch; merge-conflict detection with resolve / mark-resolved.
+- Changelists as a directory tree or flat list, tri-state checkboxes, an active list, and drag-and-drop between lists.
+- Commit, Commit and Push, Amend (message prefilled), Sign-off, commit as another author, and per-hunk Commit Selected Hunks.
+- Rollback, Shelve, Create Patch, Add to .gitignore; merge-conflict detection.
 - `Ctrl+Enter` commits, `Ctrl+Shift+Enter` commits and pushes.
 
 ### Log
-- Branch graph with ref chips, Subject / Author / Date columns, and a details panel on the right.
-- Filter by free text and by branch.
-- Commit actions: Checkout, New Branch, Cherry-Pick, Revert, Reset, Edit Commit Message (any commit), Undo Commit, Squash, Fixup into Previous, Drop Commit, Interactively Rebase from Here (reorder + pick/fixup/drop), New Tag, Copy Revision.
+- Branch graph with ref chips, Subject / Author / Date columns, and a details panel showing the changed files as a tree.
+- Filters: free text, Branch, User, Date, and Path.
+- Commit actions: Checkout, New Branch, Cherry-Pick, Revert, Reset, Edit Commit Message (any commit), Undo Commit, Squash, Fixup into Previous, Drop Commit, Interactively Rebase from Here (drag-reorder + pick/fixup/drop), New Tag, Copy Revision.
 
-### Shelf and Console
-- Shelve / Unshelve patches that survive branch switches.
-- Console tab logging git commands.
+### Conflicts
+- Three-pane merge resolver (Yours | editable Result | Theirs) with per-conflict and whole-file accept.
+
+### Shelf, Console, stash and patches
+- Shelve / Unshelve; a Console git-command log; Stash / Unstash; Create / Apply Patch.
 
 ### Branches and remotes
-- Branches popup (Checkout, New, Merge, Rebase, Rename, Delete, Compare with Current) and a status-bar widget showing ahead / behind.
-- Update (fetch then pull, rebase or merge) and Push with an outgoing-commit preview.
+- Branches popup (Checkout, New, Merge, Rebase, Rename, Delete, Compare with Current) and an ahead/behind status-bar widget.
+- Update (fetch then pull), Push (with an outgoing-commit preview), Force Push, Push Tags, and Manage Remotes.
 
-### Editor and misc
-- Git blame annotation and file history (with restore to a revision).
-- Apply Patch, Stash / Unstash, Copy Path.
-- Settings: `jegit.log.maxCount`, `jegit.panel.autoReveal`.
+### Editor
+- Git blame annotation; file history with restore to a revision; Copy Path.
 
-### Not yet implemented
-- A three-pane merge resolver of JeGit's own (conflicts currently open the VS Code merge editor).
+### Quality
+- Unit tests (vitest) for porcelain status / name-status / ref parsing, diff hunk splitting, and the changelist model.
+
+### Settings
+- `jegit.log.maxCount`, `jegit.panel.autoReveal`.
