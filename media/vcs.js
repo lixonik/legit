@@ -616,6 +616,7 @@
         { label: 'Squash Commits into One (down to here)', cmd: () => vscode.postMessage({ type: 'squashTo', hash: c.hash }) },
         { label: 'Fixup into Previous', cmd: () => vscode.postMessage({ type: 'fixupCommit', hash: c.hash }) },
         { label: 'Drop Commit', cmd: () => vscode.postMessage({ type: 'dropCommit', hash: c.hash }) },
+        { label: 'Interactively Rebase from Here...', cmd: () => vscode.postMessage({ type: 'interactiveRebase', hash: c.hash }) },
         { label: 'New Tag...', cmd: () => vscode.postMessage({ type: 'tagAt', hash: c.hash }) },
         { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
       ]);

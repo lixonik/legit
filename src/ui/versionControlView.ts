@@ -6,6 +6,7 @@ import { Repository } from '../model/repository';
 import { DEFAULT_CHANGELIST_ID } from '../model/changelistStore';
 import { HEAD_SCHEME, REV_SCHEME } from './quickDiff';
 import { showFileHistory } from './history';
+import { showRebaseDialog } from './rebaseDialog';
 
 interface CommitMsg {
   type: 'commit';
@@ -47,7 +48,8 @@ type Incoming =
         | 'undoCommit'
         | 'squashTo'
         | 'dropCommit'
-        | 'fixupCommit';
+        | 'fixupCommit'
+        | 'interactiveRebase';
       hash: string;
     }
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
@@ -273,6 +275,13 @@ export class VersionControlView implements vscode.WebviewViewProvider {
           `fixed up ${m.hash.slice(0, 7)} into its parent`,
         );
         break;
+      case 'interactiveRebase': {
+        await showRebaseDialog(this.context, this.repo, m.hash);
+        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit, this.logScope);
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        break;
+      }
       case 'undoCommit': {
         const head = await this.repo.git.headHash();
         if (m.hash !== head) {
