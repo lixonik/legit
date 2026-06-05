@@ -244,6 +244,16 @@
     count.textContent = files.length + ' file' + (files.length > 1 ? 's' : '');
 
     node.append(chev, cb, icon, name, count);
+    const items = () => files.map((f) => ({ path: f.path, untracked: true }));
+    node.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showCtx(e, [
+        { label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: items() }) },
+        { label: 'Create Patch...', cmd: () => vscode.postMessage({ type: 'createPatch', items: items() }) },
+        { label: 'Rollback (delete) all...', cmd: () => vscode.postMessage({ type: 'rollback', items: items() }) },
+      ]);
+    });
     tree.appendChild(node);
 
     if (collapsed.has(id)) return;
