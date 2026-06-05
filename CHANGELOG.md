@@ -14,7 +14,7 @@ First feature-complete preview of the JetBrains-style Git tool window.
 ### Log
 - Branch graph with ref chips, Subject / Author / Date columns, and a details panel on the right.
 - Filter by message / author / hash.
-- Commit actions: Checkout, New Branch, Cherry-Pick, Revert, Reset, Edit Commit Message, Undo Commit, Squash, New Tag, Copy Revision.
+- Commit actions: Checkout, New Branch, Cherry-Pick, Revert, Reset, Edit Commit Message (any commit), Undo Commit, Squash, Fixup into Previous, Drop Commit, New Tag, Copy Revision.
 
 ### Shelf and Console
 - Shelve / Unshelve patches that survive branch switches.
@@ -30,4 +30,4 @@ First feature-complete preview of the JetBrains-style Git tool window.
 - Settings: `legit.log.maxCount`, `legit.panel.autoReveal`.
 
 ### Not yet implemented
-- Interactive rebase (reorder / squash / edit) with a GUI; conflicts currently open the VS Code merge editor.
+- A full drag-to-reorder interactive rebase GUI (reword, fixup and drop are available from the Log); conflicts currently open the VS Code merge editor.

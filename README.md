@@ -66,10 +66,11 @@ in the bottom tool-window area (also `Alt+9`, or the LEGIT tab next to Terminal)
 
 The JetBrains Git tool window is largely covered. Still on the list:
 
-- Interactive rebase (reorder / squash / edit) with a GUI
+- A full drag-to-reorder interactive rebase GUI (reword, fixup and drop are
+  already available from the Log context menu)
 - A three-pane merge resolver of legit's own (today conflicts open the VS Code
   merge editor)
-- Richer Log filters (by branch / user / path) and a Console tab
+- Richer Log filters (by branch / user / path)
 
 ## License
 
