@@ -125,7 +125,9 @@
           else if (msg.type === 'commitDetails') post({ type: 'commitDetailsData', hash: msg.hash, body: ((LOG.find(function (c) { return c.hash === msg.hash; }) || {}).subject || '') + '\n\nLonger body line explaining the change in more detail.', files: [
             { status: 'M', path: 'src/app/main.ts' }, { status: 'A', path: 'src/app/util/new.ts' }, { status: 'D', path: 'old/file.ts' },
           ] });
-          else if (msg.type === 'requestShelf') post({ type: 'shelfData', entries: [] });
+          else if (msg.type === 'requestShelf') post({ type: 'shelfData', entries: [
+            { id: 'sh1', name: 'WIP login refactor', date: '2026-06-05T12:00:00', files: ['src/app/auth.ts', 'src/app/login.ts'] },
+          ] });
           else if (msg.type === 'requestConsole') post({ type: 'consoleData', lines: ['$ git status', '$ git log --oneline'] });
         },
         getState: function () { return savedState; },
