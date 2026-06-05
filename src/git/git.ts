@@ -412,6 +412,37 @@ export class Git {
       return '';
     }
   }
+
+  async stashPush(message: string): Promise<void> {
+    const args = ['stash', 'push'];
+    if (message) args.push('-m', message);
+    await this.raw(args);
+  }
+  async stashList(): Promise<{ ref: string; subject: string }[]> {
+    let out = '';
+    try {
+      out = await this.raw(['stash', 'list', '--format=%gd%x1f%gs']);
+    } catch {
+      return [];
+    }
+    return out
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const [ref, subject] = l.split('\x1f');
+        return { ref, subject: subject ?? '' };
+      });
+  }
+  async stashApply(ref: string): Promise<void> {
+    await this.raw(['stash', 'apply', ref]);
+  }
+  async stashPop(ref: string): Promise<void> {
+    await this.raw(['stash', 'pop', ref]);
+  }
+  async stashDrop(ref: string): Promise<void> {
+    await this.raw(['stash', 'drop', ref]);
+  }
 }
 
 function normalize(p: string): string {

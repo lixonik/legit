@@ -112,6 +112,18 @@
         "title": "Apply Patch...",
         "category": "legit",
         "icon": "$(diff)"
+      },
+      {
+        "command": "legit.stash",
+        "title": "Stash Changes...",
+        "category": "legit",
+        "icon": "$(archive)"
+      },
+      {
+        "command": "legit.unstash",
+        "title": "Unstash...",
+        "category": "legit",
+        "icon": "$(archive)"
       }
     ],
     "keybindings": [

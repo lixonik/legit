@@ -8,6 +8,7 @@ import { registerContentProviders } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { pushFlow, updateFlow } from './ui/remoteOps';
+import { stashChanges, unstash } from './ui/stash';
 import { BlameController } from './ui/blame';
 import { showFileHistory } from './ui/history';
 
@@ -98,6 +99,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return showFileHistory(repo, repo.relPathOf(uri));
   });
 
+  reg('legit.stash', () => stashChanges(repo));
+  reg('legit.unstash', () => unstash(repo));
   reg('legit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));
 
   await repo.refresh();
