@@ -13,7 +13,7 @@ interface CommitMsg {
   push: boolean;
 }
 type Incoming =
-  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'branches' }
+  | { type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'branches' | 'getLastCommitMessage' }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
   | { type: 'openDiff'; path: string; untracked: boolean }
@@ -79,6 +79,11 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'requestShelf':
         this.postShelf();
         break;
+      case 'getLastCommitMessage': {
+        const message = await this.repo.git.commitBody('HEAD');
+        this.view?.webview.postMessage({ type: 'lastCommitMessage', message });
+        break;
+      }
       case 'shelve': {
         if (!m.items?.length) {
           vscode.window.showWarningMessage('legit: select files to shelve.');

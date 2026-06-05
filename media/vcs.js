@@ -5,6 +5,7 @@
   const known = new Set();
   const collapsed = new Set();
   let groupByDir = true;
+  let amendLoadedMsg = '';
 
   // Log state
   let logCommits = [];
@@ -82,6 +83,14 @@
   commitBtn.addEventListener('click', () => doCommit(false));
   commitPushBtn.addEventListener('click', () => doCommit(true));
   msg.addEventListener('input', updateCommitState);
+  amend.addEventListener('change', () => {
+    if (amend.checked && !msg.value.trim()) {
+      vscode.postMessage({ type: 'getLastCommitMessage' });
+    } else if (!amend.checked && amendLoadedMsg && msg.value === amendLoadedMsg) {
+      msg.value = '';
+    }
+    updateCommitState();
+  });
 
   // Log toolbar
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
@@ -729,6 +738,12 @@
     } else if (m.type === 'shelfData') {
       shelfEntries = m.entries || [];
       renderShelf();
+    } else if (m.type === 'lastCommitMessage') {
+      amendLoadedMsg = m.message || '';
+      if (amend.checked && !msg.value.trim()) {
+        msg.value = amendLoadedMsg;
+        updateCommitState();
+      }
     }
   });
 
