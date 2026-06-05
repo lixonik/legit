@@ -38,6 +38,7 @@
   const logDetails = $('log-details');
   const logSearch = $('log-search');
   const logUser = $('log-user');
+  const logDate = $('log-date');
   const shelfList = $('shelf-list');
   const consoleLogEl = $('console-log');
 
@@ -108,6 +109,7 @@
   $('log-branch').addEventListener('click', () => vscode.postMessage({ type: 'logBranchFilter' }));
   logSearch.addEventListener('input', renderLog);
   logUser.addEventListener('change', renderLog);
+  logDate.addEventListener('change', renderLog);
 
   // Clicking the branch label opens the Branches popup (like the JetBrains widget).
   branchLabel.addEventListener('click', () => vscode.postMessage({ type: 'branches' }));
@@ -578,15 +580,18 @@
   function renderLog() {
     const filter = logSearch.value.trim().toLowerCase();
     const user = logUser.value;
+    const days = logDate.value ? Number(logDate.value) : 0;
+    const dateMin = days ? Date.now() - days * 86400000 : 0;
     logList.innerHTML = '';
     for (let i = 0; i < logCommits.length; i++) {
       const c = logCommits[i];
       if (user && c.author !== user) continue;
+      if (dateMin && new Date(c.date).getTime() < dateMin) continue;
       if (filter) {
         const hay = (c.subject + ' ' + c.author + ' ' + c.hash).toLowerCase();
         if (!hay.includes(filter)) continue;
       }
-      logList.appendChild(logRow(c, graphRows[i], !filter && !user));
+      logList.appendChild(logRow(c, graphRows[i], !filter && !user && !days));
     }
   }
 
