@@ -1,5 +1,6 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { parseNameStatusZ } from '../util/parse';
 
 const execFileAsync = promisify(execFile);
 
@@ -194,30 +195,7 @@ export class Git {
     } catch {
       return [];
     }
-    const tokens = out.split('\0');
-    const files: CommitFile[] = [];
-    let i = 0;
-    while (i < tokens.length) {
-      const status = tokens[i];
-      if (!status) {
-        i++;
-        continue;
-      }
-      const code = status[0];
-      if (code === 'R' || code === 'C') {
-        const from = tokens[i + 1];
-        const to = tokens[i + 2];
-        if (to === undefined) break;
-        files.push({ status: code, path: normalize(to), origPath: normalize(from) });
-        i += 3;
-      } else {
-        const p = tokens[i + 1];
-        if (p === undefined) break;
-        files.push({ status: code, path: normalize(p) });
-        i += 2;
-      }
-    }
-    return files;
+    return parseNameStatusZ(out);
   }
 
   async commitBody(hash: string): Promise<string> {
@@ -417,29 +395,7 @@ export class Git {
     } catch {
       return [];
     }
-    const tokens = out.split('\0');
-    const files: { status: string; path: string }[] = [];
-    let i = 0;
-    while (i < tokens.length) {
-      const status = tokens[i];
-      if (!status) {
-        i++;
-        continue;
-      }
-      const code = status[0];
-      if (code === 'R' || code === 'C') {
-        const to = tokens[i + 2];
-        if (to === undefined) break;
-        files.push({ status: code, path: to.replace(/\\/g, '/') });
-        i += 3;
-      } else {
-        const p = tokens[i + 1];
-        if (p === undefined) break;
-        files.push({ status: code, path: p.replace(/\\/g, '/') });
-        i += 2;
-      }
-    }
-    return files;
+    return parseNameStatusZ(out);
   }
 
   async applyCached(patchPath: string): Promise<void> {
