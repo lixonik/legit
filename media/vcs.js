@@ -991,7 +991,9 @@
     const hash = document.createElement('div');
     hash.className = 'det-hash';
     hash.textContent = (d.hash || '').slice(0, 12);
-    hash.title = d.hash;
+    hash.title = 'Click to copy ' + d.hash;
+    hash.style.cursor = 'pointer';
+    hash.addEventListener('click', () => vscode.postMessage({ type: 'copyHash', hash: d.hash }));
     logDetails.appendChild(hash);
 
     // Changes section with a file count, like JetBrains.
