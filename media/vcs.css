@@ -386,3 +386,15 @@ input[type="checkbox"] {
 .det-row .fname.dir { color: var(--fg); }
 .det-row.det-file { cursor: pointer; }
 .det-row.det-file:hover { background: var(--hover); }
+
+/* Darcula-style thin scrollbars (JetBrains look) instead of the default theme ones. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #595b5d;
+  border: 2px solid var(--tree-bg);
+  border-radius: 6px;
+  min-height: 28px;
+}
+::-webkit-scrollbar-thumb:hover { background: #6e7173; }
+::-webkit-scrollbar-corner { background: transparent; }
