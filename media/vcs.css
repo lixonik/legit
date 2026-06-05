@@ -369,7 +369,18 @@ input[type="checkbox"] {
 .lg-subject { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
 .lg-meta { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 .lg-date { flex: 0 0 auto; color: var(--fg-dim); font-size: 11px; padding-left: 12px; width: 92px; text-align: right; }
-.ref { font-size: 10px; border-radius: 3px; padding: 0 5px; margin-right: 4px; }
+.ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  border-radius: 8px;
+  padding: 0 6px 0 4px;
+  margin-right: 4px;
+  height: 15px;
+  vertical-align: middle;
+}
+.ref .codicon { font-size: 10px; }
 .ref.local { background: #4a6b3a; color: #dff0d8; }
 .ref.remote { background: #3a4a6b; color: #d8e0f0; }
 .ref.tag { background: #6b5d2a; color: #f0e8c8; }

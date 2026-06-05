@@ -408,7 +408,9 @@
         menu.push({ label: 'Commit Selected Hunks...', cmd: () => vscode.postMessage({ type: 'commitHunks', path: f.path }) });
       }
       menu.push({ label: 'Create Patch...', cmd: () => vscode.postMessage({ type: 'createPatch', items: [{ path: f.path, untracked: f.untracked }] }) });
-      menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
+      if (!f.untracked) {
+        menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
+      }
       menu.push({ label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) });
       if (f.untracked) {
         menu.push({ label: 'Add to .gitignore', cmd: () => vscode.postMessage({ type: 'addToGitignore', path: f.path }) });
@@ -793,13 +795,24 @@
     const chip = document.createElement('span');
     let kind = 'local';
     let text = ref;
-    if (ref === 'HEAD') kind = 'head';
-    else if (ref.startsWith('tag: ')) {
+    let icon = 'git-branch';
+    if (ref === 'HEAD') {
+      kind = 'head';
+      icon = 'target';
+    } else if (ref.startsWith('tag: ')) {
       kind = 'tag';
       text = ref.slice(5);
-    } else if (ref.indexOf('/') >= 0) kind = 'remote';
+      icon = 'tag';
+    } else if (ref.indexOf('/') >= 0) {
+      kind = 'remote';
+      icon = 'cloud';
+    }
     chip.className = 'ref ' + kind;
-    chip.textContent = text;
+    const i = document.createElement('i');
+    i.className = 'codicon codicon-' + icon;
+    const t = document.createElement('span');
+    t.textContent = text;
+    chip.append(i, t);
     return chip;
   }
 
