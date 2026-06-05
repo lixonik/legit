@@ -118,14 +118,14 @@ export class Git {
     }
   }
 
-  /** Commits across all refs, newest first, for the Log graph. */
-  async log(limit = 400): Promise<LogCommit[]> {
+  /** Commits for the Log graph; scope is `--all` or a branch ref. */
+  async log(limit = 400, scope = '--all'): Promise<LogCommit[]> {
     const FS = '\x1f';
     const RS = '\x1e';
     const fmt = ['%H', '%P', '%an', '%ae', '%cI', '%D', '%s'].join(FS) + RS;
     let out = '';
     try {
-      out = await this.raw(['log', '--all', `--max-count=${limit}`, '--date-order', `--pretty=format:${fmt}`]);
+      out = await this.raw(['log', scope, `--max-count=${limit}`, '--date-order', `--pretty=format:${fmt}`]);
     } catch {
       return [];
     }

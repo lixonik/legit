@@ -102,6 +102,7 @@
 
   // Log toolbar
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
+  $('log-branch').addEventListener('click', () => vscode.postMessage({ type: 'logBranchFilter' }));
   logSearch.addEventListener('input', renderLog);
 
   // Clicking the branch label opens the Branches popup (like the JetBrains widget).

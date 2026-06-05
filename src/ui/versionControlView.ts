@@ -16,7 +16,16 @@ interface CommitMsg {
 }
 type Incoming =
   | {
-      type: 'ready' | 'refresh' | 'newChangelist' | 'requestLog' | 'requestShelf' | 'requestConsole' | 'branches' | 'getLastCommitMessage';
+      type:
+        | 'ready'
+        | 'refresh'
+        | 'newChangelist'
+        | 'requestLog'
+        | 'requestShelf'
+        | 'requestConsole'
+        | 'branches'
+        | 'getLastCommitMessage'
+        | 'logBranchFilter';
     }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
@@ -56,6 +65,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   static readonly viewId = 'legit.versionControl';
   private view?: vscode.WebviewView;
   private readonly consoleLog: string[] = [];
+  private logScope = '--all';
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -153,7 +163,21 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'requestLog': {
         const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
-        const commits = await this.repo.git.log(limit);
+        const commits = await this.repo.git.log(limit, this.logScope);
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        break;
+      }
+      case 'logBranchFilter': {
+        const { current, locals, remotes } = await this.repo.git.branches();
+        type Item = vscode.QuickPickItem & { scope: string };
+        const items: Item[] = [{ label: '$(git-branch) All branches', scope: '--all' }];
+        for (const b of locals) items.push({ label: b, description: b === current ? 'current' : undefined, scope: b });
+        for (const b of remotes) items.push({ label: '$(cloud) ' + b, scope: b });
+        const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Show log for' });
+        if (!pick) break;
+        this.logScope = pick.scope;
+        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit, this.logScope);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
       }
@@ -521,7 +545,8 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       await this.repo.refresh();
-      const commits = await this.repo.git.log();
+      const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+      const commits = await this.repo.git.log(limit, this.logScope);
       this.view?.webview.postMessage({ type: 'logData', commits });
     }
   }
@@ -582,6 +607,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   <div class="tabpanel" data-tab="log">
     <div class="log-toolbar">
       <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
+      <button class="tool" id="log-branch" title="Show log for a branch"><i class="codicon codicon-git-branch"></i></button>
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>
     <div class="log-body">
