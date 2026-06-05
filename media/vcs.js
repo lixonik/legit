@@ -776,30 +776,48 @@
     const commit = logCommits.find((c) => c.hash === d.hash);
     logDetails.innerHTML = '';
 
-    const head = document.createElement('div');
-    head.className = 'det-head';
-    head.textContent = commit
-      ? commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16)
-      : '';
-    logDetails.appendChild(head);
+    // Full message first (JetBrains shows a bold subject above the body).
+    const fullMsg = (d.body || (commit ? commit.subject : '') || '').replace(/\r/g, '');
+    const lines = fullMsg.split('\n');
+    const subject = document.createElement('div');
+    subject.className = 'det-subject';
+    subject.textContent = lines[0] || '';
+    logDetails.appendChild(subject);
+    const restBody = lines.slice(1).join('\n').trim();
+    if (restBody) {
+      const body = document.createElement('div');
+      body.className = 'det-msg';
+      body.textContent = restBody;
+      logDetails.appendChild(body);
+    }
 
+    // Metadata: author, date, then the abbreviated hash.
+    if (commit) {
+      const meta = document.createElement('div');
+      meta.className = 'det-meta';
+      meta.textContent =
+        commit.author + ' <' + commit.email + '>  ' + (commit.date || '').replace('T', ' ').slice(0, 16);
+      logDetails.appendChild(meta);
+    }
     const hash = document.createElement('div');
     hash.className = 'det-hash';
-    hash.textContent = d.hash;
+    hash.textContent = (d.hash || '').slice(0, 12);
+    hash.title = d.hash;
     logDetails.appendChild(hash);
 
-    const message = document.createElement('div');
-    message.className = 'det-msg';
-    message.textContent = d.body || (commit ? commit.subject : '');
-    logDetails.appendChild(message);
+    // Changes section with a file count, like JetBrains.
+    const n = d.files.length;
+    const header = document.createElement('div');
+    header.className = 'det-section';
+    header.textContent = n ? 'Changes (' + n + ' file' + (n === 1 ? '' : 's') + ')' : 'Changes';
+    logDetails.appendChild(header);
 
     const files = document.createElement('div');
     files.className = 'det-files';
     const parent = commit && commit.parents.length ? commit.parents[0] : '';
-    if (d.files.length) {
+    if (n) {
       files.appendChild(detailNode(buildTree(d.files), 1, d.hash, parent));
-    }
-    if (d.files.length === 0) {
+    } else {
       const none = document.createElement('div');
       none.className = 'placeholder';
       none.textContent = 'No file changes (merge or empty commit).';

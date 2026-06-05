@@ -363,9 +363,20 @@ input[type="checkbox"] {
 .ref.head { background: var(--accent); color: #fff; }
 .log-details { flex: 0 0 38%; max-width: 46%; min-width: 220px; overflow: auto; border-left: 1px solid var(--border); padding: 8px 10px; background: var(--bg); }
 .det-head { color: var(--fg); margin-bottom: 4px; }
-.det-hash { color: var(--fg-dim); font-family: "Consolas", monospace; font-size: 11px; }
-.det-msg { white-space: pre-wrap; color: var(--fg); margin: 6px 0; }
-.det-files { margin-top: 6px; }
+.det-subject { color: var(--fg); font-weight: 600; white-space: pre-wrap; margin-bottom: 4px; }
+.det-meta { color: var(--fg-dim); font-size: 11px; margin-top: 4px; }
+.det-hash { color: var(--fg-dim); font-family: "Consolas", monospace; font-size: 11px; cursor: default; }
+.det-msg { white-space: pre-wrap; color: var(--fg); margin: 4px 0; }
+.det-section {
+  color: var(--fg-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 8px 0 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.det-files { margin-top: 2px; }
 .det-row { display: flex; align-items: center; gap: 6px; padding: 1px 8px 1px 0; white-space: nowrap; }
 .det-row .codicon { font-size: 13px; }
 .det-row .fname.dir { color: var(--fg); }
