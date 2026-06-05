@@ -138,7 +138,8 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         break;
       }
       case 'requestLog': {
-        const commits = await this.repo.git.log();
+        const limit = vscode.workspace.getConfiguration('legit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
       }

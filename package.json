@@ -20,6 +20,21 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "configuration": {
+      "title": "legit",
+      "properties": {
+        "legit.log.maxCount": {
+          "type": "number",
+          "default": 400,
+          "description": "Maximum number of commits to load in the Log tab."
+        },
+        "legit.panel.autoReveal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reveal the legit panel automatically when a git repository opens."
+        }
+      }
+    },
     "viewsContainers": {
       "panel": [
         {

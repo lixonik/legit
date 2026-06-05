@@ -88,7 +88,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // Reveal the legit panel so it is discoverable instead of hidden behind the
   // Terminal tab in the bottom panel.
-  void vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`);
+  if (vscode.workspace.getConfiguration('legit').get('panel.autoReveal', true)) {
+    void vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`);
+  }
 }
 
 export function deactivate(): void {}
