@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<!-- Standalone preview of the JeGit webview for visual QA (no VS Code needed).
+     Mocks acquireVsCodeApi and feeds the same messages the extension would.
+     Served from the repo root; assets referenced absolutely under /media. -->
+<link href="/media/codicons/codicon.css" rel="stylesheet" />
+<link href="/media/vcs.css" rel="stylesheet" />
+<title>JeGit preview</title>
+</head>
+<body>
+  <div class="tabbar">
+    <div class="tab active" data-tab="local">Local Changes</div>
+    <div class="tab" data-tab="log">Log</div>
+    <div class="tab" data-tab="shelf">Shelf</div>
+    <div class="tab" data-tab="console">Console</div>
+    <div class="branch" id="branch"></div>
+  </div>
+
+  <div class="tabpanel active" data-tab="local">
+    <div class="toolbar">
+      <button class="tool" id="tb-focus" title="Focus commit message"><i class="codicon codicon-check"></i></button>
+      <button class="tool" id="tb-refresh" title="Refresh"><i class="codicon codicon-refresh"></i></button>
+      <button class="tool" id="tb-new" title="New changelist"><i class="codicon codicon-add"></i></button>
+      <span class="sep"></span>
+      <button class="tool" id="tb-rollback" title="Rollback selected"><i class="codicon codicon-discard"></i></button>
+      <button class="tool" id="tb-shelve" title="Shelve selected"><i class="codicon codicon-archive"></i></button>
+      <span class="sep"></span>
+      <button class="tool" id="tb-expand" title="Expand all"><i class="codicon codicon-expand-all"></i></button>
+      <button class="tool" id="tb-collapse" title="Collapse all"><i class="codicon codicon-collapse-all"></i></button>
+      <span class="sep"></span>
+      <button class="tool" id="tb-group" title="Group by directory / flat list"><i class="codicon codicon-list-tree"></i></button>
+    </div>
+    <div class="tree" id="tree"></div>
+    <div class="commit-area">
+      <textarea id="message" placeholder="Commit Message" rows="2"></textarea>
+      <div class="commit-row">
+        <label class="opt"><input type="checkbox" id="amend" /> Amend</label>
+        <label class="opt"><input type="checkbox" id="signoff" /> Sign-off</label>
+        <input type="text" id="author" class="author-input" placeholder="Author (optional)" />
+        <span class="selinfo" id="selinfo"></span>
+        <span class="spacer"></span>
+        <button class="btn secondary" id="commit" disabled>Commit</button>
+        <button class="btn primary" id="commitPush" disabled>Commit and Push</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-tab="log">
+    <div class="log-toolbar">
+      <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
+      <select id="log-user" class="log-select" title="Filter by author"><option value="">All users</option></select>
+      <select id="log-date" class="log-select" title="Filter by date">
+        <option value="">All time</option>
+        <option value="1">Last 24 hours</option>
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="365">Last year</option>
+      </select>
+      <button class="tool" id="log-path" title="Filter by path"><i class="codicon codicon-filter"></i></button>
+      <button class="tool" id="log-branch" title="Show log for a branch"><i class="codicon codicon-git-branch"></i></button>
+      <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
+    </div>
+    <div class="log-body">
+      <div class="log-branches" id="log-branches"></div>
+      <div class="splitter" id="split-branches"></div>
+      <div class="log-left">
+        <div class="log-header"><span class="lh-graph"></span><span class="lh-subject">Subject</span><span class="lh-author">Author</span><span class="lh-date">Date</span></div>
+        <div class="log-list" id="log-list"></div>
+      </div>
+      <div class="splitter" id="split-details"></div>
+      <div class="log-details" id="log-details"><div class="placeholder">Select a commit to see its details.</div></div>
+    </div>
+  </div>
+
+  <div class="tabpanel" data-tab="shelf">
+    <div class="toolbar">
+      <button class="tool" id="shelf-refresh" title="Refresh shelf"><i class="codicon codicon-refresh"></i></button>
+    </div>
+    <div class="tree" id="shelf-list"></div>
+  </div>
+  <div class="tabpanel" data-tab="console"><div class="console" id="console-log"></div></div>
+
+  <div class="ctx-menu" id="ctxmenu"></div>
+
+  <script>
+    const fileOf = (path, letter, label, extra) =>
+      Object.assign({ path, letter, status: letter + ' ', statusLabel: label, conflicted: false, deleted: false, untracked: false }, extra || {});
+    const STATE = {
+      branch: 'main',
+      total: 6,
+      changelists: [
+        { id: 'default', name: 'Changes', active: true, files: [
+          fileOf('src/app/main.ts', 'M', 'Modified'),
+          fileOf('src/app/util/format.ts', 'M', 'Modified'),
+          fileOf('src/styles/theme.css', 'A', 'Added'),
+          fileOf('README.md', 'D', 'Deleted', { deleted: true }),
+          fileOf('src/app/legacy.ts', 'U', 'Conflict', { conflicted: true, status: 'UU' }),
+        ] },
+        { id: 'cl2', name: 'Experiment', active: false, files: [
+          fileOf('notes/todo.txt', 'Q', 'Unversioned', { untracked: true, status: '??' }),
+        ] },
+      ],
+    };
+    const LOG = [
+      { hash: 'aaaaaaaaaaaaaaaa1', parents: ['bbbbbbbbbbbbbbbb2'], author: 'Boris Pasternak', email: 'boris@ex.com', date: '2026-06-05T14:21:00', subject: 'Fix engine warm-up after wakeup', refs: ['HEAD', 'main'] },
+      { hash: 'bbbbbbbbbbbbbbbb2', parents: ['cccccccccccccccc3', 'dddddddddddddddd4'], author: 'Anna Karenina', email: 'anna@ex.com', date: '2026-06-05T13:02:00', subject: 'Merge branch feature/login', refs: ['origin/main'] },
+      { hash: 'cccccccccccccccc3', parents: ['eeeeeeeeeeeeeeee5'], author: 'Boris Pasternak', email: 'boris@ex.com', date: '2026-06-04T18:40:00', subject: 'Add validation to login form', refs: [] },
+      { hash: 'dddddddddddddddd4', parents: ['eeeeeeeeeeeeeeee5'], author: 'Lev Tolstoy', email: 'lev@ex.com', date: '2026-06-04T17:11:00', subject: 'Introduce auth service', refs: ['tag: v0.2.0'] },
+      { hash: 'eeeeeeeeeeeeeeee5', parents: [], author: 'Anna Karenina', email: 'anna@ex.com', date: '2026-06-03T09:30:00', subject: 'Initial commit', refs: [] },
+    ];
+    const BRANCHES = { current: 'main', locals: ['main', 'feature/login', 'experiment'], remotes: ['origin/main', 'origin/feature/login'], scope: '--all' };
+
+    let savedState = {};
+    function acquireVsCodeApi() {
+      return {
+        postMessage: (msg) => {
+          if (!msg) return;
+          if (msg.type === 'ready') post({ type: 'state', payload: STATE });
+          else if (msg.type === 'requestLog') { post({ type: 'logData', commits: LOG }); post({ type: 'branchData', current: BRANCHES.current, locals: BRANCHES.locals, remotes: BRANCHES.remotes, scope: BRANCHES.scope }); }
+          else if (msg.type === 'setLogScope') { BRANCHES.scope = msg.scope; post({ type: 'logData', commits: LOG }); post({ type: 'branchData', current: BRANCHES.current, locals: BRANCHES.locals, remotes: BRANCHES.remotes, scope: BRANCHES.scope }); }
+          else if (msg.type === 'commitDetails') post({ type: 'commitDetailsData', hash: msg.hash, body: ((LOG.find(function (c) { return c.hash === msg.hash; }) || {}).subject || '') + '\n\nLonger body line explaining the change in more detail.', files: [
+            { status: 'M', path: 'src/app/main.ts' }, { status: 'A', path: 'src/app/util/new.ts' }, { status: 'D', path: 'old/file.ts' },
+          ] });
+          else if (msg.type === 'requestShelf') post({ type: 'shelfData', entries: [] });
+          else if (msg.type === 'requestConsole') post({ type: 'consoleData', lines: ['$ git status', '$ git log --oneline'] });
+        },
+        getState: function () { return savedState; },
+        setState: function (s) { savedState = s; },
+      };
+    }
+    function post(data) { window.postMessage(data, '*'); }
+  </script>
+  <script src="/media/vcs.js"></script>
+</body>
+</html>
