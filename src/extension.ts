@@ -4,7 +4,7 @@ import { Git } from './git/git';
 import { ChangelistStore } from './model/changelistStore';
 import { ShelfStore } from './model/shelfStore';
 import { Repository } from './model/repository';
-import { registerContentProviders } from './ui/quickDiff';
+import { registerContentProviders, REV_SCHEME } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { manageRemotes } from './ui/remotes';
@@ -57,6 +57,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('jegit.branches', () => showBranches(repo));
   reg('jegit.manageRemotes', () => manageRemotes(repo));
+  reg('jegit.compareFileWithBranch', async () => {
+    const uri = vscode.window.activeTextEditor?.document.uri;
+    if (!uri || uri.scheme !== 'file') {
+      vscode.window.showInformationMessage('JeGit: open a file to compare.');
+      return;
+    }
+    const rel = repo.relPathOf(uri);
+    const { current, locals, remotes } = await git.branches();
+    const items = [...locals, ...remotes].filter((b) => b !== current).map((b) => ({ label: b }));
+    if (!items.length) {
+      vscode.window.showInformationMessage('JeGit: no other branches to compare with.');
+      return;
+    }
+    const pick = await vscode.window.showQuickPick(items, {
+      placeHolder: `Compare ${rel.split('/').pop()} with branch`,
+    });
+    if (!pick) return;
+    const left = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + rel, query: pick.label });
+    const name = rel.split('/').pop() ?? rel;
+    await vscode.commands.executeCommand('vscode.diff', left, uri, `${name} (${pick.label} <-> Working Tree)`);
+  });
   reg('jegit.newTag', async () => {
     const name = await vscode.window.showInputBox({ prompt: 'New tag name', placeHolder: 'v1.0.0' });
     if (!name) return;

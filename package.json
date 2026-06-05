@@ -120,6 +120,12 @@
         "icon": "$(history)"
       },
       {
+        "command": "jegit.compareFileWithBranch",
+        "title": "Compare File with Branch...",
+        "category": "JeGit",
+        "icon": "$(git-compare)"
+      },
+      {
         "command": "jegit.newTag",
         "title": "New Tag...",
         "category": "JeGit",
@@ -188,6 +194,11 @@
           "command": "jegit.fileHistory",
           "when": "resourceScheme == file",
           "group": "navigation@10"
+        },
+        {
+          "command": "jegit.compareFileWithBranch",
+          "when": "resourceScheme == file",
+          "group": "navigation@11"
         }
       ]
     }
