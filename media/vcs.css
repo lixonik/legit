@@ -313,5 +313,8 @@ input[type="checkbox"] {
 .det-hash { color: var(--fg-dim); font-family: "Consolas", monospace; font-size: 11px; }
 .det-msg { white-space: pre-wrap; color: var(--fg); margin: 6px 0; }
 .det-files { margin-top: 6px; }
-.det-file { display: flex; gap: 6px; padding: 1px 0; cursor: pointer; }
-.det-file:hover { filter: brightness(1.3); }
+.det-row { display: flex; align-items: center; gap: 6px; padding: 1px 8px 1px 0; white-space: nowrap; }
+.det-row .codicon { font-size: 13px; }
+.det-row .fname.dir { color: var(--fg); }
+.det-row.det-file { cursor: pointer; }
+.det-row.det-file:hover { background: var(--hover); }

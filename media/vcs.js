@@ -660,6 +660,49 @@
     return chip;
   }
 
+  // Render a commit's changed files as a directory tree (JetBrains-style details).
+  function detailNode(node, depth, hash, parent) {
+    const frag = document.createDocumentFragment();
+    for (const dn of [...node.dirs.keys()].sort((a, b) => a.localeCompare(b))) {
+      let child = node.dirs.get(dn);
+      let label = dn;
+      while (child.dirs.size === 1 && child.files.length === 0) {
+        const k = [...child.dirs.keys()][0];
+        label += '/' + k;
+        child = child.dirs.get(k);
+      }
+      const row = document.createElement('div');
+      row.className = 'det-row';
+      row.style.paddingLeft = depth * 14 + 'px';
+      const ic = document.createElement('i');
+      ic.className = 'codicon codicon-folder';
+      const nm = document.createElement('span');
+      nm.className = 'fname dir';
+      nm.textContent = label;
+      row.append(ic, nm);
+      frag.appendChild(row);
+      frag.appendChild(detailNode(child, depth + 1, hash, parent));
+    }
+    for (const f of node.files.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+      const code = f.status[0];
+      const row = document.createElement('div');
+      row.className = 'det-row det-file';
+      row.style.paddingLeft = depth * 14 + 'px';
+      const letter = document.createElement('span');
+      letter.className = 'letter ' + cls(code);
+      letter.textContent = code;
+      const ic = document.createElement('i');
+      ic.className = 'codicon codicon-file';
+      const nm = document.createElement('span');
+      nm.className = cls(code);
+      nm.textContent = baseName(f.path);
+      row.append(letter, ic, nm);
+      row.addEventListener('click', () => vscode.postMessage({ type: 'openRevDiff', hash, parent, path: f.path }));
+      frag.appendChild(row);
+    }
+    return frag;
+  }
+
   function renderDetails(d) {
     const commit = logCommits.find((c) => c.hash === d.hash);
     logDetails.innerHTML = '';
@@ -684,21 +727,8 @@
     const files = document.createElement('div');
     files.className = 'det-files';
     const parent = commit && commit.parents.length ? commit.parents[0] : '';
-    for (const f of d.files) {
-      const fr = document.createElement('div');
-      fr.className = 'det-file';
-      const code = f.status[0];
-      const icon = document.createElement('i');
-      icon.className = 'codicon codicon-file';
-      const letter = document.createElement('span');
-      letter.className = 'letter ' + cls(code);
-      letter.textContent = code;
-      const name = document.createElement('span');
-      name.className = cls(code);
-      name.textContent = f.path;
-      fr.append(letter, icon, name);
-      fr.addEventListener('click', () => vscode.postMessage({ type: 'openRevDiff', hash: d.hash, parent, path: f.path }));
-      files.appendChild(fr);
+    if (d.files.length) {
+      files.appendChild(detailNode(buildTree(d.files), 1, d.hash, parent));
     }
     if (d.files.length === 0) {
       const none = document.createElement('div');
