@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Repository } from '../model/repository';
+import { REV_SCHEME } from './quickDiff';
 
 type BranchItem = vscode.QuickPickItem & { ref?: string; action?: string };
 type ActionItem = vscode.QuickPickItem & { a: string };
@@ -41,6 +42,7 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
   if (ref !== current) {
     actions.push({ label: `$(git-merge) Merge ${ref} into ${current}`, a: 'merge' });
     actions.push({ label: `$(git-pull-request) Rebase ${current} onto ${ref}`, a: 'rebase' });
+    actions.push({ label: '$(git-compare) Compare with Current', a: 'compare' });
   }
   if (!isRemote && ref !== current) {
     actions.push({ label: '$(edit) Rename...', a: 'rename' });
@@ -64,6 +66,22 @@ async function branchActions(repo: Repository, ref: string, current: string, isR
       case 'rebase':
         await repo.git.rebaseOnto(ref);
         break;
+      case 'compare': {
+        const files = await repo.git.diffRefs(current, ref);
+        if (!files.length) {
+          vscode.window.showInformationMessage(`legit: no differences between ${current} and ${ref}.`);
+          return;
+        }
+        type F = vscode.QuickPickItem & { path: string };
+        const items: F[] = files.map((f) => ({ label: f.path, description: f.status, path: f.path }));
+        const file = await vscode.window.showQuickPick(items, { placeHolder: `Changed files: ${current} <-> ${ref}` });
+        if (!file) return;
+        const left = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file.path, query: current });
+        const right = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file.path, query: ref });
+        const name = file.path.split('/').pop() ?? file.path;
+        await vscode.commands.executeCommand('vscode.diff', left, right, `${name} (${current} <-> ${ref})`);
+        return;
+      }
       case 'rename': {
         const name = await vscode.window.showInputBox({ prompt: `Rename ${ref} to`, value: ref });
         if (!name) return;

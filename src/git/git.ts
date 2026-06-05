@@ -347,6 +347,38 @@ export class Git {
     if (ref) args.push(ref);
     await this.raw(args);
   }
+
+  async diffRefs(a: string, b: string): Promise<{ status: string; path: string }[]> {
+    let out = '';
+    try {
+      out = await this.raw(['diff', '--name-status', '-z', a, b]);
+    } catch {
+      return [];
+    }
+    const tokens = out.split('\0');
+    const files: { status: string; path: string }[] = [];
+    let i = 0;
+    while (i < tokens.length) {
+      const status = tokens[i];
+      if (!status) {
+        i++;
+        continue;
+      }
+      const code = status[0];
+      if (code === 'R' || code === 'C') {
+        const to = tokens[i + 2];
+        if (to === undefined) break;
+        files.push({ status: code, path: to.replace(/\\/g, '/') });
+        i += 3;
+      } else {
+        const p = tokens[i + 1];
+        if (p === undefined) break;
+        files.push({ status: code, path: p.replace(/\\/g, '/') });
+        i += 2;
+      }
+    }
+    return files;
+  }
 }
 
 function normalize(p: string): string {
