@@ -106,6 +106,12 @@
         "title": "New Tag...",
         "category": "legit",
         "icon": "$(tag)"
+      },
+      {
+        "command": "legit.applyPatch",
+        "title": "Apply Patch...",
+        "category": "legit",
+        "icon": "$(diff)"
       }
     ],
     "keybindings": [

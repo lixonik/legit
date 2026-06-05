@@ -317,6 +317,7 @@
       if (!f.untracked && !f.conflicted && !f.deleted) {
         menu.push({ label: 'Commit Selected Hunks...', cmd: () => vscode.postMessage({ type: 'commitHunks', path: f.path }) });
       }
+      menu.push({ label: 'Create Patch...', cmd: () => vscode.postMessage({ type: 'createPatch', items: [{ path: f.path, untracked: f.untracked }] }) });
       menu.push({ label: 'Move to Another Changelist...', cmd: () => vscode.postMessage({ type: 'move', paths: [f.path] }) });
       menu.push({ label: 'Shelve...', cmd: () => vscode.postMessage({ type: 'shelve', items: [{ path: f.path, untracked: f.untracked }] }) });
       menu.push({ label: 'Rollback...', cmd: () => vscode.postMessage({ type: 'rollback', items: [{ path: f.path, untracked: f.untracked }] }) });
@@ -377,6 +378,7 @@
         { label: 'New Changelist...', cmd: () => vscode.postMessage({ type: 'newChangelist' }) },
         { label: 'Rename...', cmd: () => vscode.postMessage({ type: 'renameChangelist', id: cl.id }) },
         { label: 'Shelve Changelist...', cmd: () => cl.files.length && vscode.postMessage({ type: 'shelve', items: items() }) },
+        { label: 'Create Patch...', cmd: () => cl.files.length && vscode.postMessage({ type: 'createPatch', items: items() }) },
         { label: 'Delete', cmd: () => vscode.postMessage({ type: 'deleteChangelist', id: cl.id }) },
       ]);
     });

@@ -35,6 +35,7 @@ type Incoming =
   | { type: 'fileHistory'; path: string }
   | { type: 'tagAt'; hash: string }
   | { type: 'commitHunks'; path: string }
+  | { type: 'createPatch'; items: { path: string; untracked: boolean }[] }
   | CommitMsg;
 
 /** The JetBrains-style Version Control tool window, rendered as a webview. */
@@ -278,6 +279,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'commitHunks':
         await this.commitHunks(m.path);
         break;
+      case 'createPatch':
+        await this.createPatch(m.items);
+        break;
     }
   }
 
@@ -344,6 +348,31 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         /* ignore */
       }
       await this.repo.refresh();
+    }
+  }
+
+  /** Write the diff of the given files to a .patch file chosen by the user. */
+  private async createPatch(items: { path: string; untracked: boolean }[]): Promise<void> {
+    if (!items.length) return;
+    const untracked = items.filter((i) => i.untracked).map((i) => i.path);
+    const all = items.map((i) => i.path);
+    try {
+      if (untracked.length) await this.repo.git.addIntentToAdd(untracked);
+      const patch = await this.repo.git.diffHead(all);
+      if (untracked.length) await this.repo.git.raw(['reset', '-q', '--', ...untracked]).catch(() => undefined);
+      if (!patch.trim()) {
+        vscode.window.showInformationMessage('legit: nothing to put in the patch.');
+        return;
+      }
+      const uri = await vscode.window.showSaveDialog({
+        defaultUri: this.repo.absUri('changes.patch'),
+        filters: { Patch: ['patch', 'diff'] },
+      });
+      if (!uri) return;
+      fs.writeFileSync(uri.fsPath, patch, 'utf8');
+      vscode.window.showInformationMessage(`legit: created patch ${uri.fsPath.split(/[\\/]/).pop()}.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

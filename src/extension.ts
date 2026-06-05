@@ -68,6 +68,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('legit.push', () => pushFlow(repo));
   reg('legit.update', () => updateFlow(repo));
+  reg('legit.applyPatch', async () => {
+    const uris = await vscode.window.showOpenDialog({
+      canSelectMany: false,
+      filters: { Patch: ['patch', 'diff'] },
+      openLabel: 'Apply Patch',
+    });
+    if (!uris || !uris.length) return;
+    try {
+      await git.applyPatch(uris[0].fsPath);
+      vscode.window.showInformationMessage('legit: patch applied.');
+      await repo.refresh();
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `legit: ${err instanceof Error ? err.message : String(err)} (patch may not apply cleanly)`,
+      );
+    }
+  });
 
   const blame = new BlameController(repo);
   context.subscriptions.push(blame);
