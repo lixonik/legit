@@ -79,7 +79,9 @@ function html(commits: { hash: string; subject: string }[]): string {
   body { font-family: "Segoe UI", sans-serif; font-size: 12px; color: #bbb; background: #3c3f41; padding: 10px; }
   h3 { margin: 0 0 8px; font-weight: 600; color: #ddd; }
   .hint { color: #888; margin-bottom: 8px; }
-  .row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; background: #2b2b2b; border: 1px solid #323232; margin-bottom: 3px; border-radius: 3px; }
+  .row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; background: #2b2b2b; border: 1px solid #323232; margin-bottom: 3px; border-radius: 3px; cursor: move; }
+  .row.dragover { border-color: #4a88c7; }
+  .grip { color: #6a6a6a; cursor: move; }
   .row select { background: #45494a; color: #bbb; border: 1px solid #5e6263; border-radius: 3px; padding: 1px 4px; }
   .mv { background: transparent; border: 1px solid #5e6263; color: #bbb; border-radius: 3px; cursor: pointer; width: 22px; }
   .mv:hover:not(:disabled) { background: #4b5052; }
@@ -93,7 +95,7 @@ function html(commits: { hash: string; subject: string }[]): string {
 </style></head>
 <body>
   <h3>Interactive Rebase</h3>
-  <div class="hint">Reorder with the arrows and choose an action per commit. Oldest is at the top. (Reword and Squash are available as single-commit actions in the Log.)</div>
+  <div class="hint">Drag rows (or use the arrows) to reorder, and choose an action per commit. Oldest is at the top. (Reword and Squash are available as single-commit actions in the Log.)</div>
   <div id="list"></div>
   <div class="bar">
     <button class="primary" id="start">Start Rebase</button>
@@ -108,6 +110,22 @@ function html(commits: { hash: string; subject: string }[]): string {
       rows.forEach((r, i) => {
         const div = document.createElement('div');
         div.className = 'row' + (r.action === 'drop' ? ' drop' : '');
+        div.draggable = true;
+        div.ondragstart = (e) => { e.dataTransfer.setData('text/plain', String(i)); e.dataTransfer.effectAllowed = 'move'; };
+        div.ondragover = (e) => { e.preventDefault(); div.classList.add('dragover'); };
+        div.ondragleave = () => div.classList.remove('dragover');
+        div.ondrop = (e) => {
+          e.preventDefault();
+          const from = Number(e.dataTransfer.getData('text/plain'));
+          if (Number.isInteger(from) && from !== i) {
+            const [moved] = rows.splice(from, 1);
+            rows.splice(i, 0, moved);
+            render();
+          }
+        };
+        const grip = document.createElement('span');
+        grip.className = 'grip';
+        grip.textContent = '\\u2630';
         const up = document.createElement('button');
         up.className = 'mv'; up.textContent = '\\u2191'; up.disabled = i === 0;
         up.onclick = () => { [rows[i - 1], rows[i]] = [rows[i], rows[i - 1]]; render(); };
@@ -122,7 +140,7 @@ function html(commits: { hash: string; subject: string }[]): string {
         sel.onchange = () => { r.action = sel.value; render(); };
         const h = document.createElement('span'); h.className = 'hash'; h.textContent = r.short;
         const s = document.createElement('span'); s.className = 'subj'; s.textContent = r.subject;
-        div.append(up, down, sel, h, s);
+        div.append(grip, up, down, sel, h, s);
         list.appendChild(div);
       });
     }
