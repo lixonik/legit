@@ -199,6 +199,11 @@ export class Git {
     }
   }
 
+  /** Overwrite a file in the working tree with its content at a revision. */
+  async restoreFile(rev: string, relPath: string): Promise<void> {
+    await this.raw(['checkout', rev, '--', relPath]);
+  }
+
   async branches(): Promise<{ current: string; locals: string[]; remotes: string[] }> {
     const current = await this.currentBranch();
     const l = await this.raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads']).catch(() => '');

@@ -22,7 +22,35 @@ export async function showFileHistory(repo: Repository, rel: string): Promise<vo
     matchOnDetail: true,
   });
   if (!pick) return;
+
+  type ActItem = vscode.QuickPickItem & { a: 'diff' | 'restore' };
+  const action = await vscode.window.showQuickPick<ActItem>(
+    [
+      { label: '$(diff) Show Diff', a: 'diff' },
+      { label: '$(history) Restore This Version', a: 'restore' },
+    ],
+    { placeHolder: `${pick.hash.slice(0, 7)}: ${pick.label}` },
+  );
+  if (!action) return;
+
   const name = rel.split('/').pop() ?? rel;
+  if (action.a === 'restore') {
+    const ok = await vscode.window.showWarningMessage(
+      `Restore ${name} to ${pick.hash.slice(0, 7)}? Current changes to this file will be overwritten.`,
+      { modal: true },
+      'Restore',
+    );
+    if (ok !== 'Restore') return;
+    try {
+      await repo.git.restoreFile(pick.hash, rel);
+      vscode.window.showInformationMessage(`legit: restored ${name} to ${pick.hash.slice(0, 7)}.`);
+      await repo.refresh();
+    } catch (err) {
+      vscode.window.showErrorMessage(`legit: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    return;
+  }
+
   const left = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + rel, query: pick.parent });
   const right = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + rel, query: pick.hash });
   const sh = (h: string) => (h ? h.slice(0, 7) : '∅');
