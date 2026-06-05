@@ -56,6 +56,13 @@ export class ShelfStore {
     return entry;
   }
 
+  async rename(id: string, name: string): Promise<void> {
+    const e = this.state.entries.find((x) => x.id === id);
+    if (!e) return;
+    e.name = name;
+    await this.memento.update(STORAGE_KEY, this.state);
+  }
+
   async remove(id: string): Promise<void> {
     this.state.entries = this.state.entries.filter((e) => e.id !== id);
     try {

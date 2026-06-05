@@ -62,6 +62,7 @@ type Incoming =
   | { type: 'shelve'; items: { path: string; untracked: boolean }[] }
   | { type: 'unshelve'; id: string; keep?: boolean }
   | { type: 'deleteShelf'; id: string }
+  | { type: 'renameShelf'; id: string }
   | { type: 'openFile'; path: string }
   | { type: 'mergeResolve'; path: string }
   | { type: 'markResolved'; paths: string[] }
@@ -202,6 +203,14 @@ export class VersionControlView implements vscode.WebviewViewProvider {
           );
         }
         break;
+      case 'renameShelf': {
+        const entry = this.repo.shelves().find((e) => e.id === m.id);
+        const name = await vscode.window.showInputBox({ prompt: 'Rename shelf', value: entry?.name });
+        if (name === undefined || !name.trim()) break;
+        await this.repo.renameShelf(m.id, name.trim());
+        this.postShelf();
+        break;
+      }
       case 'deleteShelf': {
         const ok = await vscode.window.showWarningMessage('Delete this shelf?', { modal: true }, 'Delete');
         if (ok !== 'Delete') break;

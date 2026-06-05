@@ -183,6 +183,10 @@ export class Repository implements vscode.Disposable {
     await this.shelf.remove(id);
   }
 
+  async renameShelf(id: string, name: string): Promise<void> {
+    await this.shelf.rename(id, name);
+  }
+
   dispose(): void {
     if (this.timer) clearTimeout(this.timer);
     this.disposables.forEach((d) => d.dispose());
