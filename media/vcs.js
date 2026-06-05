@@ -107,6 +107,7 @@
   // Log toolbar
   $('log-refresh').addEventListener('click', () => vscode.postMessage({ type: 'requestLog' }));
   $('log-branch').addEventListener('click', () => vscode.postMessage({ type: 'logBranchFilter' }));
+  $('log-path').addEventListener('click', () => vscode.postMessage({ type: 'logPathFilter' }));
   logSearch.addEventListener('input', renderLog);
   logUser.addEventListener('change', renderLog);
   logDate.addEventListener('change', renderLog);

@@ -30,7 +30,8 @@ type Incoming =
         | 'requestConsole'
         | 'branches'
         | 'getLastCommitMessage'
-        | 'logBranchFilter';
+        | 'logBranchFilter'
+        | 'logPathFilter';
     }
   | { type: 'setActive' | 'renameChangelist' | 'deleteChangelist'; id: string }
   | { type: 'move'; paths: string[] }
@@ -74,6 +75,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private readonly consoleLog: string[] = [];
   private logScope = '--all';
+  private logPath = '';
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -171,7 +173,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       }
       case 'requestLog': {
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
-        const commits = await this.repo.git.log(limit, this.logScope);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
       }
@@ -185,7 +187,20 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         if (!pick) break;
         this.logScope = pick.scope;
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
-        const commits = await this.repo.git.log(limit, this.logScope);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
+        this.view?.webview.postMessage({ type: 'logData', commits });
+        break;
+      }
+      case 'logPathFilter': {
+        const p = await vscode.window.showInputBox({
+          prompt: 'Filter Log by path (empty = all paths)',
+          value: this.logPath,
+          placeHolder: 'src/app/foo.ts',
+        });
+        if (p === undefined) break;
+        this.logPath = p.trim();
+        const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
       }
@@ -283,7 +298,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'interactiveRebase': {
         await showRebaseDialog(this.context, this.repo, m.hash);
         const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
-        const commits = await this.repo.git.log(limit, this.logScope);
+        const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         break;
       }
@@ -593,7 +608,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     } finally {
       await this.repo.refresh();
       const limit = vscode.workspace.getConfiguration('jegit').get('log.maxCount', 400);
-      const commits = await this.repo.git.log(limit, this.logScope);
+      const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
       this.view?.webview.postMessage({ type: 'logData', commits });
     }
   }
@@ -664,6 +679,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         <option value="30">Last 30 days</option>
         <option value="365">Last year</option>
       </select>
+      <button class="tool" id="log-path" title="Filter by path"><i class="codicon codicon-filter"></i></button>
       <button class="tool" id="log-branch" title="Show log for a branch"><i class="codicon codicon-git-branch"></i></button>
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
     </div>

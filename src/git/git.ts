@@ -159,13 +159,15 @@ export class Git {
   }
 
   /** Commits for the Log graph; scope is `--all` or a branch ref. */
-  async log(limit = 400, scope = '--all'): Promise<LogCommit[]> {
+  async log(limit = 400, scope = '--all', pathFilter = ''): Promise<LogCommit[]> {
     const FS = '\x1f';
     const RS = '\x1e';
     const fmt = ['%H', '%P', '%an', '%ae', '%cI', '%D', '%s'].join(FS) + RS;
+    const args = ['log', scope, `--max-count=${limit}`, '--date-order', `--pretty=format:${fmt}`];
+    if (pathFilter) args.push('--', pathFilter);
     let out = '';
     try {
-      out = await this.raw(['log', scope, `--max-count=${limit}`, '--date-order', `--pretty=format:${fmt}`]);
+      out = await this.raw(args);
     } catch {
       return [];
     }
