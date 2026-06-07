@@ -4,7 +4,7 @@
   "description": "JetBrains-style Git workflow for VS Code: changelists, shelve, rich commit, log graph.",
   "version": "0.1.0",
   "publisher": "lixonik",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/lixonik/jegit.git"

@@ -69,6 +69,4 @@ any git repository. The **JeGit** panel opens in the bottom tool-window area
 
 ## License
 
-JeGit is licensed under the **PolyForm Noncommercial License 1.0.0** (see
-[LICENSE](LICENSE)): free for any noncommercial use. Commercial use requires a
-separate commercial license from the author (lixonik).
+JeGit is licensed under the **MIT License** (see [LICENSE](LICENSE)).
