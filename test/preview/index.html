@@ -6,7 +6,7 @@
      Mocks acquireVsCodeApi and feeds the same messages the extension would.
      Served from the repo root; assets referenced absolutely under /media. -->
 <link href="/media/codicons/codicon.css" rel="stylesheet" />
-<link href="/media/vcs.css" rel="stylesheet" />
+<script>document.write('<link href="/media/vcs.css?' + Date.now() + '" rel="stylesheet">');</script>
 <title>JeGit preview</title>
 </head>
 <body>
@@ -136,6 +136,6 @@
     }
     function post(data) { window.postMessage(data, '*'); }
   </script>
-  <script src="/media/vcs.js"></script>
+  <script>document.write('<script src="/media/vcs.js?' + Date.now() + '"><\/script>');</script>
 </body>
 </html>

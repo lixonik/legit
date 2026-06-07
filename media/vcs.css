@@ -334,6 +334,8 @@ input[type="checkbox"] {
 .lb-row.current .lb-name { font-weight: 700; color: var(--fg); }
 .lb-row.selected.current .lb-name { color: #fff; }
 .lb-row .codicon { font-size: 13px; }
+.lb-head .codicon-git-commit { color: #f0c000; }
+.lb-head-ref { color: var(--fg-dim); font-size: 10px; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; }
 .lb-name { overflow: hidden; text-overflow: ellipsis; }
 .lb-all { padding-left: 8px; }
 .splitter {

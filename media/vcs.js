@@ -742,6 +742,19 @@
     if (!host || !branchInfo) return;
     const scope = branchInfo.scope || '--all';
     host.innerHTML = '';
+    // HEAD (current checkout), like the JetBrains Log branch tree.
+    const head = document.createElement('div');
+    head.className = 'lb-row lb-all lb-head' + (scope === 'HEAD' ? ' selected' : '');
+    head.innerHTML = '<i class="codicon codicon-git-commit"></i><span class="lb-name">HEAD</span>';
+    if (branchInfo.current) {
+      const cur = document.createElement('span');
+      cur.className = 'lb-head-ref';
+      cur.textContent = branchInfo.current;
+      head.appendChild(cur);
+    }
+    head.title = branchInfo.current ? 'HEAD (' + branchInfo.current + ')' : 'HEAD';
+    head.addEventListener('click', () => vscode.postMessage({ type: 'setLogScope', scope: 'HEAD' }));
+    host.appendChild(head);
     const all = document.createElement('div');
     all.className = 'lb-row lb-all' + (scope === '--all' ? ' selected' : '');
     all.innerHTML = '<i class="codicon codicon-git-branch"></i><span class="lb-name">All branches</span>';

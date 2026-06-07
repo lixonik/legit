@@ -46,7 +46,11 @@ export class BlameController implements vscode.Disposable {
       if (!b) continue;
       const args = encodeURIComponent(JSON.stringify([b.hash]));
       const md = new vscode.MarkdownString(
-        `**${b.hash.slice(0, 8)}** · ${b.author} · ${b.date}\n\n[$(git-commit) Show Commit in Log](command:jegit.showCommitInLog?${args})`,
+        `**${b.summary || '(no subject)'}**\n\n` +
+          `$(git-commit) \`${b.hash.slice(0, 8)}\` · ${b.author}` +
+          (b.email ? ` <${b.email}>` : '') +
+          ` · ${b.date}\n\n` +
+          `[$(git-commit) Show Commit in Log](command:jegit.showCommitInLog?${args})`,
       );
       md.isTrusted = true;
       md.supportThemeIcons = true;
