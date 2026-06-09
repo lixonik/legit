@@ -74,6 +74,7 @@ type Incoming =
   | { type: 'copyPath'; path: string; absolute: boolean }
   | { type: 'setLogScope'; scope: string }
   | { type: 'compareCommits'; a: string; b: string }
+  | { type: 'createPatchFromCommit'; hash: string }
   | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
 
@@ -233,6 +234,25 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         await this.postBranches();
+        break;
+      }
+      case 'createPatchFromCommit': {
+        try {
+          const patch = await this.repo.git.commitPatch(m.hash);
+          if (!patch.trim()) {
+            vscode.window.showInformationMessage('JeGit: nothing to export from this commit.');
+            break;
+          }
+          const uri = await vscode.window.showSaveDialog({
+            defaultUri: this.repo.absUri(m.hash.slice(0, 7) + '.patch'),
+            filters: { Patch: ['patch', 'diff'] },
+          });
+          if (!uri) break;
+          fs.writeFileSync(uri.fsPath, patch, 'utf8');
+          vscode.window.showInformationMessage(`JeGit: created patch ${uri.fsPath.split(/[\\/]/).pop()}.`);
+        } catch (err) {
+          vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+        }
         break;
       }
       case 'compareCommits': {

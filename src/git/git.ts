@@ -208,6 +208,11 @@ export class Git {
     }
   }
 
+  /** A single commit exported as a patch (git format-patch), for "Create Patch from commit". */
+  async commitPatch(hash: string): Promise<string> {
+    return this.raw(['format-patch', '-1', '--stdout', hash]);
+  }
+
   /** Committer name and ISO date (shown in details when it differs from the author). */
   async commitCommitter(hash: string): Promise<{ name: string; date: string }> {
     try {
