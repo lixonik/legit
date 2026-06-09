@@ -73,6 +73,7 @@ type Incoming =
   | { type: 'createPatch'; items: { path: string; untracked: boolean }[] }
   | { type: 'copyPath'; path: string; absolute: boolean }
   | { type: 'setLogScope'; scope: string }
+  | { type: 'compareCommits'; a: string; b: string }
   | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
 
@@ -232,6 +233,28 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         await this.postBranches();
+        break;
+      }
+      case 'compareCommits': {
+        const files = await this.repo.git.diffRefs(m.a, m.b);
+        if (!files.length) {
+          vscode.window.showInformationMessage('JeGit: no differences between the selected commits.');
+          break;
+        }
+        type F = vscode.QuickPickItem & { path: string };
+        const items: F[] = files.map((f) => ({
+          label: f.path.split('/').pop() ?? f.path,
+          description: `${f.status}  ${f.path}`,
+          path: f.path,
+        }));
+        const file = await vscode.window.showQuickPick(items, {
+          placeHolder: `Changed files: ${m.a.slice(0, 7)} <-> ${m.b.slice(0, 7)}`,
+        });
+        if (!file) break;
+        const left = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file.path, query: m.a });
+        const right = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file.path, query: m.b });
+        const name = file.path.split('/').pop() ?? file.path;
+        await vscode.commands.executeCommand('vscode.diff', left, right, `${name} (${m.a.slice(0, 7)} <-> ${m.b.slice(0, 7)})`);
         break;
       }
       case 'branchCmd': {

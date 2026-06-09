@@ -365,6 +365,7 @@ input[type="checkbox"] {
 .log-row { display: flex; align-items: center; height: 22px; padding-right: 10px; white-space: nowrap; cursor: pointer; }
 .log-row:hover { background: var(--hover); }
 .log-row.selected { background: var(--sel); }
+.log-row.compare-sel { outline: 1px solid var(--accent); outline-offset: -1px; background: rgba(74, 136, 199, 0.18); }
 .log-row.selected .lg-meta, .log-row.selected .lg-date, .log-row.selected .lg-subject { color: #fff; }
 .lg-graph { flex: 0 0 auto; height: 22px; }
 /* Blend the commit node outline with the row background in every state. */

@@ -27,6 +27,7 @@
   let maxLanes = 1;
   let logLoaded = false;
   let selectedHash = null;
+  const compareSel = new Set();
   let detailsCache = {};
 
   // Shelf state
@@ -863,7 +864,20 @@
     date.textContent = (c.date || '').slice(0, 10);
     row.appendChild(date);
 
-    row.addEventListener('click', () => {
+    if (compareSel.has(c.hash)) row.classList.add('compare-sel');
+    row.addEventListener('click', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        // Ctrl/Cmd-click marks up to two commits to compare (JetBrains-style).
+        if (compareSel.has(c.hash)) compareSel.delete(c.hash);
+        else {
+          compareSel.add(c.hash);
+          while (compareSel.size > 2) compareSel.delete(compareSel.values().next().value);
+        }
+        document.querySelectorAll('.log-row').forEach((x) => x.classList.toggle('compare-sel', compareSel.has(x.dataset.hash)));
+        return;
+      }
+      compareSel.clear();
+      document.querySelectorAll('.log-row').forEach((x) => x.classList.remove('compare-sel'));
       selectedHash = c.hash;
       document.querySelectorAll('.log-row').forEach((x) => x.classList.remove('selected'));
       row.classList.add('selected');
@@ -876,7 +890,12 @@
     row.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showCtx(e, [
+      const menu = [];
+      if (compareSel.size === 2) {
+        const pair = [...compareSel];
+        menu.push({ label: 'Compare Selected Versions', cmd: () => vscode.postMessage({ type: 'compareCommits', a: pair[0], b: pair[1] }) });
+      }
+      menu.push(
         { label: 'Checkout Revision', cmd: () => vscode.postMessage({ type: 'checkoutRev', hash: c.hash }) },
         { label: 'New Branch from Here...', cmd: () => vscode.postMessage({ type: 'newBranchAt', hash: c.hash }) },
         { label: 'Cherry-Pick', cmd: () => vscode.postMessage({ type: 'cherryPick', hash: c.hash }) },
@@ -891,7 +910,8 @@
         { label: 'New Tag...', cmd: () => vscode.postMessage({ type: 'tagAt', hash: c.hash }) },
         { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
         { label: 'Open Commit on Remote', cmd: () => vscode.postMessage({ type: 'openCommitRemote', hash: c.hash }) },
-      ]);
+      );
+      showCtx(e, menu);
     });
     return row;
   }
