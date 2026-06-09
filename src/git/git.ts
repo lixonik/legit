@@ -269,8 +269,12 @@ export class Git {
     if (from) args.push(from);
     await this.raw(args);
   }
-  async mergeBranch(ref: string): Promise<void> {
-    await this.raw(['merge', ref]);
+  async mergeBranch(ref: string, mode: 'default' | 'no-ff' | 'squash' = 'default'): Promise<void> {
+    const args = ['merge'];
+    if (mode === 'no-ff') args.push('--no-ff');
+    else if (mode === 'squash') args.push('--squash');
+    args.push(ref);
+    await this.raw(args);
   }
   async rebaseOnto(ref: string): Promise<void> {
     await this.raw(['rebase', ref]);

@@ -77,9 +77,18 @@ export async function performBranchAction(
       case 'newfrom':
         await newBranchFrom(repo, ref);
         return;
-      case 'merge':
-        await repo.git.mergeBranch(ref);
+      case 'merge': {
+        type MM = vscode.QuickPickItem & { mode: 'default' | 'no-ff' | 'squash' };
+        const modes: MM[] = [
+          { label: 'Merge', description: 'fast-forward when possible', mode: 'default' },
+          { label: 'Merge (no fast-forward)', description: '--no-ff, always create a merge commit', mode: 'no-ff' },
+          { label: 'Squash Merge', description: '--squash, stage changes without committing', mode: 'squash' },
+        ];
+        const mm = await vscode.window.showQuickPick(modes, { placeHolder: `Merge ${ref} into ${current}` });
+        if (!mm) return;
+        await repo.git.mergeBranch(ref, mm.mode);
         break;
+      }
       case 'rebase':
         await repo.git.rebaseOnto(ref);
         break;
