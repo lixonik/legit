@@ -843,8 +843,8 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         <input type="text" id="author" class="author-input" placeholder="Author (optional)" title="Commit as another author: Name &lt;email&gt;" />
         <span class="selinfo" id="selinfo"></span>
         <span class="spacer"></span>
-        <button class="btn secondary" id="commit" disabled>Commit</button>
-        <button class="btn primary" id="commitPush" disabled>Commit and Push</button>
+        <button class="btn primary" id="commit" disabled>Commit</button>
+        <button class="btn secondary" id="commitPush" disabled>Commit and Push</button>
       </div>
     </div>
   </div>
