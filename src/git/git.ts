@@ -356,6 +356,20 @@ export class Git {
     }
   }
 
+  /** All file paths present at a given revision (for "Browse Repository at Revision"). */
+  async lsTree(rev: string, limit = 5000): Promise<string[]> {
+    try {
+      const out = await this.raw(['ls-tree', '-r', '--name-only', rev]);
+      return out
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
   /** Tag names, newest first. */
   async tags(limit = 100): Promise<string[]> {
     try {

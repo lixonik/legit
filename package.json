@@ -180,6 +180,12 @@
         "icon": "$(trash)"
       },
       {
+        "command": "jegit.browseAtRevision",
+        "title": "Browse Repository at Revision...",
+        "category": "JeGit",
+        "icon": "$(history)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",

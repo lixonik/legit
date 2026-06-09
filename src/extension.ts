@@ -253,6 +253,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await repo.refresh();
     }
   });
+  reg('jegit.browseAtRevision', async () => {
+    const rev = await vscode.window.showInputBox({
+      prompt: 'Browse repository at revision',
+      placeHolder: 'branch, tag, or commit hash',
+      value: 'HEAD',
+    });
+    if (!rev || !rev.trim()) return;
+    const files = await git.lsTree(rev.trim());
+    if (!files.length) {
+      vscode.window.showInformationMessage('JeGit: no files at that revision (or revision not found).');
+      return;
+    }
+    const file = await vscode.window.showQuickPick(files, { placeHolder: `Files at ${rev.trim()} -- open one` });
+    if (!file) return;
+    const uri = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file, query: rev.trim() });
+    await vscode.commands.executeCommand('vscode.open', uri);
+  });
   reg('jegit.cleanupBranches', async () => {
     const { current } = await git.branches();
     const merged = (await git.mergedBranches()).filter((b) => b !== current && b !== 'main' && b !== 'master');
