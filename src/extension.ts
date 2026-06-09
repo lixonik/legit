@@ -253,6 +253,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await repo.refresh();
     }
   });
+  reg('jegit.cleanupBranches', async () => {
+    const { current } = await git.branches();
+    const merged = (await git.mergedBranches()).filter((b) => b !== current && b !== 'main' && b !== 'master');
+    if (!merged.length) {
+      vscode.window.showInformationMessage('JeGit: no merged branches to clean up.');
+      return;
+    }
+    const picks = await vscode.window.showQuickPick(
+      merged.map((b) => ({ label: b, picked: true })),
+      { canPickMany: true, placeHolder: 'Select merged branches to delete' },
+    );
+    if (!picks || !picks.length) return;
+    try {
+      for (const p of picks) await git.deleteBranch(p.label, false);
+      vscode.window.showInformationMessage(`JeGit: deleted ${picks.length} merged branch(es).`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
   reg('jegit.stash', () => stashChanges(repo));
   reg('jegit.unstash', () => unstash(repo));
   reg('jegit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));

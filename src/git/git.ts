@@ -329,6 +329,20 @@ export class Git {
     await this.raw(['rebase', '--skip']);
   }
 
+  /** Local branches already merged into the current branch (excludes the current branch). */
+  async mergedBranches(): Promise<string[]> {
+    try {
+      const out = await this.raw(['branch', '--merged']);
+      return out
+        .split('\n')
+        .filter((l) => !l.startsWith('*'))
+        .map((l) => l.trim())
+        .filter((b) => b && !b.startsWith('('));
+    } catch {
+      return [];
+    }
+  }
+
   /** Tag names, newest first. */
   async tags(limit = 100): Promise<string[]> {
     try {

@@ -11,6 +11,7 @@ export async function showBranches(repo: Repository): Promise<void> {
   const items: BranchItem[] = [
     { label: '$(add) New Branch...', action: 'new' },
     { label: '$(tag) Checkout Tag or Revision...', action: 'checkoutRef' },
+    { label: '$(trash) Clean Up Merged Branches...', action: 'cleanup' },
   ];
 
   if (locals.length) {
@@ -40,6 +41,10 @@ export async function showBranches(repo: Repository): Promise<void> {
   if (!pick) return;
   if (pick.action === 'new') return newBranchFrom(repo, current);
   if (pick.action === 'checkoutRef') return checkoutRef(repo);
+  if (pick.action === 'cleanup') {
+    await vscode.commands.executeCommand('jegit.cleanupBranches');
+    return;
+  }
   if (pick.tag) return checkoutRef(repo, pick.tag);
   if (!pick.ref) return;
   await branchActions(repo, pick.ref, current, remotes.includes(pick.ref));
