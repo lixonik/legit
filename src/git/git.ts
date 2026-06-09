@@ -328,6 +328,20 @@ export class Git {
   async skipRebase(): Promise<void> {
     await this.raw(['rebase', '--skip']);
   }
+
+  /** Tag names, newest first. */
+  async tags(limit = 100): Promise<string[]> {
+    try {
+      const out = await this.raw(['tag', '--sort=-creatordate']);
+      return out
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
   async deleteBranch(name: string, force = false): Promise<void> {
     await this.raw(['branch', force ? '-D' : '-d', name]);
   }

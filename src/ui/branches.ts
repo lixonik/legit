@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Repository } from '../model/repository';
 import { REV_SCHEME } from './quickDiff';
 
-type BranchItem = vscode.QuickPickItem & { ref?: string; action?: string };
+type BranchItem = vscode.QuickPickItem & { ref?: string; action?: string; tag?: string };
 type ActionItem = vscode.QuickPickItem & { a: string };
 
 /** JetBrains-style Branches popup: pick a branch, then pick an action. */
@@ -27,6 +27,11 @@ export async function showBranches(repo: Repository): Promise<void> {
     items.push({ label: 'Remote', kind: vscode.QuickPickItemKind.Separator });
     for (const b of remotes) items.push({ label: '$(cloud) ' + b, ref: b });
   }
+  const tags = await repo.git.tags(50);
+  if (tags.length) {
+    items.push({ label: 'Tags', kind: vscode.QuickPickItemKind.Separator });
+    for (const t of tags) items.push({ label: '$(tag) ' + t, tag: t });
+  }
 
   const pick = await vscode.window.showQuickPick(items, {
     placeHolder: `Git branches (current: ${current})`,
@@ -35,6 +40,7 @@ export async function showBranches(repo: Repository): Promise<void> {
   if (!pick) return;
   if (pick.action === 'new') return newBranchFrom(repo, current);
   if (pick.action === 'checkoutRef') return checkoutRef(repo);
+  if (pick.tag) return checkoutRef(repo, pick.tag);
   if (!pick.ref) return;
   await branchActions(repo, pick.ref, current, remotes.includes(pick.ref));
 }
@@ -142,11 +148,13 @@ export async function performBranchAction(
   }
 }
 
-async function checkoutRef(repo: Repository): Promise<void> {
-  const ref = await vscode.window.showInputBox({
-    prompt: 'Checkout tag or revision (detached HEAD)',
-    placeHolder: 'v1.2.0 or a commit hash',
-  });
+async function checkoutRef(repo: Repository, preset?: string): Promise<void> {
+  const ref =
+    preset ??
+    (await vscode.window.showInputBox({
+      prompt: 'Checkout tag or revision (detached HEAD)',
+      placeHolder: 'v1.2.0 or a commit hash',
+    }));
   if (!ref || !ref.trim()) return;
   try {
     await repo.git.checkout(ref.trim());
