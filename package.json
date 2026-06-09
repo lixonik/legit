@@ -156,6 +156,24 @@
         "icon": "$(sync)"
       },
       {
+        "command": "jegit.continueOperation",
+        "title": "Continue Merge/Rebase/Cherry-Pick",
+        "category": "JeGit",
+        "icon": "$(debug-continue)"
+      },
+      {
+        "command": "jegit.abortOperation",
+        "title": "Abort Merge/Rebase/Cherry-Pick",
+        "category": "JeGit",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "jegit.skipCommit",
+        "title": "Skip Commit (Rebase)",
+        "category": "JeGit",
+        "icon": "$(debug-step-over)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",

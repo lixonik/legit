@@ -205,6 +205,54 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return showFileHistory(repo, repo.relPathOf(uri));
   });
 
+  reg('jegit.continueOperation', async () => {
+    const op = await git.operationState();
+    if (!op) {
+      vscode.window.showInformationMessage('JeGit: no merge/rebase/cherry-pick in progress.');
+      return;
+    }
+    try {
+      await git.continueOperation(op);
+      vscode.window.showInformationMessage(`JeGit: ${op} continued.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `JeGit: ${err instanceof Error ? err.message : String(err)} (resolve all conflicts first)`,
+      );
+    } finally {
+      await repo.refresh();
+    }
+  });
+  reg('jegit.abortOperation', async () => {
+    const op = await git.operationState();
+    if (!op) {
+      vscode.window.showInformationMessage('JeGit: no merge/rebase/cherry-pick in progress.');
+      return;
+    }
+    const ok = await vscode.window.showWarningMessage(`Abort the in-progress ${op}?`, { modal: true }, 'Abort');
+    if (ok !== 'Abort') return;
+    try {
+      await git.abortOperation(op);
+      vscode.window.showInformationMessage(`JeGit: ${op} aborted.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
+  reg('jegit.skipCommit', async () => {
+    if ((await git.operationState()) !== 'rebase') {
+      vscode.window.showInformationMessage('JeGit: skip is only available during a rebase.');
+      return;
+    }
+    try {
+      await git.skipRebase();
+      vscode.window.showInformationMessage('JeGit: skipped the current commit.');
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
   reg('jegit.stash', () => stashChanges(repo));
   reg('jegit.unstash', () => unstash(repo));
   reg('jegit.focus', () => vscode.commands.executeCommand(`${VersionControlView.viewId}.focus`));

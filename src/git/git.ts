@@ -1,6 +1,10 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
 import { parseNameStatusZ } from '../util/parse';
+
+export type GitOperation = 'merge' | 'rebase' | 'cherry-pick' | 'revert';
 
 const execFileAsync = promisify(execFile);
 
@@ -278,6 +282,51 @@ export class Git {
   }
   async rebaseOnto(ref: string): Promise<void> {
     await this.raw(['rebase', ref]);
+  }
+
+  /** Detect an in-progress merge/rebase/cherry-pick/revert by inspecting the git dir. */
+  async operationState(): Promise<GitOperation | null> {
+    let gitDir = '';
+    try {
+      gitDir = (await this.raw(['rev-parse', '--absolute-git-dir'])).trim();
+    } catch {
+      return null;
+    }
+    const has = (p: string) => {
+      try {
+        return fs.existsSync(path.join(gitDir, p));
+      } catch {
+        return false;
+      }
+    };
+    if (has('rebase-merge') || has('rebase-apply')) return 'rebase';
+    if (has('MERGE_HEAD')) return 'merge';
+    if (has('CHERRY_PICK_HEAD')) return 'cherry-pick';
+    if (has('REVERT_HEAD')) return 'revert';
+    return null;
+  }
+
+  async abortOperation(kind: GitOperation): Promise<void> {
+    await this.raw([kind, '--abort']);
+  }
+
+  /** Continue an in-progress operation; uses a no-op editor so it never blocks. */
+  async continueOperation(kind: GitOperation): Promise<void> {
+    if (kind === 'merge') {
+      await this.raw(['commit', '--no-edit']);
+      return;
+    }
+    await execFileAsync('git', [kind, '--continue'], {
+      cwd: this.repoRoot,
+      windowsHide: true,
+      maxBuffer: 64 * 1024 * 1024,
+      env: { ...process.env, GIT_EDITOR: 'true' },
+    });
+    this.commandLogger?.(`git ${kind} --continue`);
+  }
+
+  async skipRebase(): Promise<void> {
+    await this.raw(['rebase', '--skip']);
   }
   async deleteBranch(name: string, force = false): Promise<void> {
     await this.raw(['branch', force ? '-D' : '-d', name]);
