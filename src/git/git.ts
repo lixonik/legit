@@ -89,6 +89,18 @@ export class Git {
     await this.raw(['add', '-A', '--', ...paths]);
   }
 
+  /** Staging-area operations (for the optional index/staging mode). */
+  async unstage(paths: string[]): Promise<void> {
+    if (paths.length === 0) return;
+    await this.raw(['reset', '-q', 'HEAD', '--', ...paths]);
+  }
+  async stageAll(): Promise<void> {
+    await this.raw(['add', '-A']);
+  }
+  async unstageAll(): Promise<void> {
+    await this.raw(['reset', '-q', 'HEAD']);
+  }
+
   /**
    * Commit exactly the given paths. Passing the pathspec to `commit` performs a
    * partial commit limited to those files, so changes staged elsewhere are left
