@@ -8,7 +8,10 @@ type ActionItem = vscode.QuickPickItem & { a: string };
 /** JetBrains-style Branches popup: pick a branch, then pick an action. */
 export async function showBranches(repo: Repository): Promise<void> {
   const { current, locals, remotes } = await repo.git.branches();
-  const items: BranchItem[] = [{ label: '$(add) New Branch...', action: 'new' }];
+  const items: BranchItem[] = [
+    { label: '$(add) New Branch...', action: 'new' },
+    { label: '$(tag) Checkout Tag or Revision...', action: 'checkoutRef' },
+  ];
 
   if (locals.length) {
     items.push({ label: 'Local', kind: vscode.QuickPickItemKind.Separator });
@@ -31,6 +34,7 @@ export async function showBranches(repo: Repository): Promise<void> {
   });
   if (!pick) return;
   if (pick.action === 'new') return newBranchFrom(repo, current);
+  if (pick.action === 'checkoutRef') return checkoutRef(repo);
   if (!pick.ref) return;
   await branchActions(repo, pick.ref, current, remotes.includes(pick.ref));
 }
@@ -122,6 +126,22 @@ export async function performBranchAction(
       }
     }
     vscode.window.showInformationMessage(`JeGit: ${action} (${ref}) done.`);
+  } catch (err) {
+    vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    await repo.refresh();
+  }
+}
+
+async function checkoutRef(repo: Repository): Promise<void> {
+  const ref = await vscode.window.showInputBox({
+    prompt: 'Checkout tag or revision (detached HEAD)',
+    placeHolder: 'v1.2.0 or a commit hash',
+  });
+  if (!ref || !ref.trim()) return;
+  try {
+    await repo.git.checkout(ref.trim());
+    vscode.window.showInformationMessage(`JeGit: checked out ${ref.trim()} (detached HEAD).`);
   } catch (err) {
     vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
