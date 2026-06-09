@@ -196,6 +196,10 @@
   branchLabel.addEventListener('click', () => vscode.postMessage({ type: 'branches' }));
 
   function doCommit(push) {
+    if (state.staging) {
+      vscode.postMessage({ type: 'commitStaged', message: msg.value, push: push });
+      return;
+    }
     const all = allPaths();
     const paths = [...checked].filter((p) => all.has(p));
     vscode.postMessage({ type: 'commit', paths, message: msg.value, amend: amend.checked, push, signoff: signoff.checked, author: author.value });
@@ -250,6 +254,11 @@
   function render() {
     branchLabel.textContent = state.branch ? '⎇ ' + state.branch : '';
     tree.innerHTML = '';
+    if (state.staging) {
+      renderStaging(state.staging);
+      updateCommitState();
+      return;
+    }
     // JetBrains keeps unversioned (untracked) files in their own node instead of
     // inside a changelist; collect them across changelists and render separately.
     const unversioned = [];
@@ -269,6 +278,60 @@
     }
     if (unversioned.length) renderUnversioned(unversioned);
     updateCommitState();
+  }
+
+  // Staging-area view (opt-in): Staged / Changes / Unversioned groups.
+  function renderStaging(s) {
+    const group = (title, files, kind) => {
+      const node = document.createElement('div');
+      node.className = 'cl-node';
+      const icon = document.createElement('i');
+      icon.className =
+        'codicon ' + (kind === 'staged' ? 'codicon-check' : kind === 'untracked' ? 'codicon-question' : 'codicon-edit');
+      const name = document.createElement('span');
+      name.className = 'cl-name';
+      name.textContent = title;
+      const count = document.createElement('span');
+      count.className = 'cl-count';
+      count.textContent = files.length ? files.length + ' file' + (files.length > 1 ? 's' : '') : 'empty';
+      node.append(icon, name, count);
+      tree.appendChild(node);
+      for (const f of files.slice().sort((a, b) => a.path.localeCompare(b.path))) tree.appendChild(stagingRow(f, kind));
+    };
+    group('Staged', s.staged || [], 'staged');
+    group('Changes', s.unstaged || [], 'unstaged');
+    group('Unversioned Files', s.untracked || [], 'untracked');
+  }
+  function stagingRow(f, kind) {
+    const row = document.createElement('div');
+    row.className = 'tree-row';
+    row.style.paddingLeft = '22px';
+    const ltr = f.letter || (kind === 'untracked' ? '?' : 'M');
+    const letter = document.createElement('span');
+    letter.className = 'letter ' + cls(kind === 'untracked' ? 'Q' : ltr);
+    letter.textContent = ltr;
+    const icon = document.createElement('i');
+    icon.className = 'codicon codicon-file';
+    const name = document.createElement('span');
+    name.className = 'fname';
+    name.textContent = baseName(f.path);
+    const dir = document.createElement('span');
+    dir.className = 'fdir';
+    dir.textContent = dirName(f.path);
+    row.append(letter, icon, name, dir);
+    const untracked = kind === 'untracked';
+    row.addEventListener('dblclick', () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: untracked }));
+    row.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const menu = [];
+      if (kind === 'staged') menu.push({ label: 'Unstage', cmd: () => vscode.postMessage({ type: 'unstage', paths: [f.path] }) });
+      else menu.push({ label: 'Stage', cmd: () => vscode.postMessage({ type: 'stage', paths: [f.path] }) });
+      menu.push({ label: 'Show Diff', cmd: () => vscode.postMessage({ type: 'openDiff', path: f.path, untracked: untracked }) });
+      menu.push({ label: 'Show History', cmd: () => vscode.postMessage({ type: 'fileHistory', path: f.path }) });
+      showCtx(e, menu);
+    });
+    return row;
   }
 
   // Banner shown while a merge/rebase/cherry-pick/revert is in progress.
@@ -599,6 +662,14 @@
   }
 
   function updateCommitState() {
+    if (state.staging) {
+      const n = (state.staging.staged || []).length;
+      selInfo.textContent = n + ' staged';
+      const ok = n > 0 && msg.value.trim().length > 0;
+      commitBtn.disabled = !ok;
+      commitPushBtn.disabled = !ok;
+      return;
+    }
     const all = allPaths();
     const n = [...checked].filter((p) => all.has(p)).length;
     selInfo.textContent = n + ' of ' + state.total + ' selected';
@@ -1177,6 +1248,7 @@
     const m = ev.data;
     if (m.type === 'state') {
       state = m.payload;
+      state.staging = m.staging || null;
       reconcile();
       render();
       renderOpBanner(m.operation);

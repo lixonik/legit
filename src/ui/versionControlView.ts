@@ -10,6 +10,7 @@ import { showRebaseDialog } from './rebaseDialog';
 import { performBranchAction } from './branches';
 import { showMergeResolver } from './mergeResolver';
 import { splitHunks } from '../util/diff';
+import { splitStaged } from '../util/stagingGroups';
 import { toWebUrl, commitWebUrl } from '../util/remoteUrl';
 
 interface CommitMsg {
@@ -77,6 +78,8 @@ type Incoming =
   | { type: 'createPatchFromCommit'; hash: string }
   | { type: 'pushUpTo'; hash: string }
   | { type: 'opAction'; action: 'continue' | 'abort' | 'skip' }
+  | { type: 'stage' | 'unstage'; paths: string[] }
+  | { type: 'commitStaged'; message: string; push: boolean }
   | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
 
@@ -113,7 +116,9 @@ export class VersionControlView implements vscode.WebviewViewProvider {
   private async postState(): Promise<void> {
     const payload = this.repo.view();
     const operation = await this.repo.git.operationState().catch(() => null);
-    this.view?.webview.postMessage({ type: 'state', payload, operation });
+    const stagingOn = vscode.workspace.getConfiguration('jegit').get('stagingArea', false);
+    const staging = stagingOn ? splitStaged(await this.repo.git.status().catch(() => [])) : null;
+    this.view?.webview.postMessage({ type: 'state', payload, operation, staging });
   }
 
   private postShelf(): void {
@@ -552,6 +557,30 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       case 'commit':
         await this.commit(m);
         break;
+      case 'stage':
+        if (m.paths.length) await this.repo.git.add(m.paths);
+        await this.repo.refresh();
+        break;
+      case 'unstage':
+        if (m.paths.length) await this.repo.git.unstage(m.paths);
+        await this.repo.refresh();
+        break;
+      case 'commitStaged': {
+        if (!m.message?.trim()) {
+          vscode.window.showWarningMessage('JeGit: enter a commit message.');
+          break;
+        }
+        try {
+          await this.repo.git.commitIndex(m.message.trim());
+          this.view?.webview.postMessage({ type: 'committed' });
+          if (m.push) await vscode.commands.executeCommand('jegit.push');
+        } catch (err) {
+          vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)} (stage something first)`);
+        } finally {
+          await this.repo.refresh();
+        }
+        break;
+      }
       case 'commitHunks':
         await this.commitHunks(m.path);
         break;
