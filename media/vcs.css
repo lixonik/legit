@@ -297,6 +297,23 @@ input[type="checkbox"] {
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
 }
+.log-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--input);
+  color: var(--fg);
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  height: 22px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.log-filter:hover { background: #4b5052; }
+.log-filter.active { background: var(--sel); color: #fff; border-color: var(--accent); }
+.log-filter.active .codicon { color: #fff; }
 .log-search {
   flex: 1;
   background: var(--input);

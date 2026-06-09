@@ -50,17 +50,17 @@
 
   <div class="tabpanel" data-tab="log">
     <div class="log-toolbar">
-      <input id="log-search" class="log-search" placeholder="Filter commits by message, author or hash..." />
-      <select id="log-user" class="log-select" title="Filter by author"><option value="">All users</option></select>
+      <button class="log-filter" id="log-branch" title="Filter by branch"><i class="codicon codicon-git-branch"></i> Branch</button>
+      <select id="log-user" class="log-select" title="Filter by author"><option value="">User: all</option></select>
       <select id="log-date" class="log-select" title="Filter by date">
-        <option value="">All time</option>
+        <option value="">Date: all</option>
         <option value="1">Last 24 hours</option>
         <option value="7">Last 7 days</option>
         <option value="30">Last 30 days</option>
         <option value="365">Last year</option>
       </select>
-      <button class="tool" id="log-path" title="Filter by path"><i class="codicon codicon-filter"></i></button>
-      <button class="tool" id="log-branch" title="Show log for a branch"><i class="codicon codicon-git-branch"></i></button>
+      <button class="log-filter" id="log-path" title="Filter by path"><i class="codicon codicon-filter"></i> Paths</button>
+      <input id="log-search" class="log-search" placeholder="Search..." />
       <span class="sep"></span>
       <button class="tool" id="log-cherrypick" title="Cherry-Pick the selected commit onto the current branch"><i class="codicon codicon-git-commit"></i></button>
       <button class="tool" id="log-refresh" title="Refresh log"><i class="codicon codicon-refresh"></i></button>
