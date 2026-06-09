@@ -75,6 +75,7 @@ type Incoming =
   | { type: 'setLogScope'; scope: string }
   | { type: 'compareCommits'; a: string; b: string }
   | { type: 'createPatchFromCommit'; hash: string }
+  | { type: 'pushUpTo'; hash: string }
   | { type: 'opAction'; action: 'continue' | 'abort' | 'skip' }
   | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
@@ -248,6 +249,20 @@ export class VersionControlView implements vscode.WebviewViewProvider {
               : 'jegit.skipCommit';
         await vscode.commands.executeCommand(cmd);
         await this.postState();
+        break;
+      }
+      case 'pushUpTo': {
+        if (!(await this.repo.git.isAncestor(m.hash, 'HEAD'))) {
+          vscode.window.showInformationMessage('JeGit: that commit is not on the current branch.');
+          break;
+        }
+        const ok = await vscode.window.showWarningMessage(
+          `Push all commits up to ${m.hash.slice(0, 7)} to the remote?`,
+          { modal: true },
+          'Push',
+        );
+        if (ok !== 'Push') break;
+        await this.runLogOp(() => this.repo.git.pushUpTo(m.hash), `pushed up to ${m.hash.slice(0, 7)}`);
         break;
       }
       case 'createPatchFromCommit': {

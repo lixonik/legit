@@ -329,6 +329,19 @@ export class Git {
     await this.raw(['rebase', '--skip']);
   }
 
+  /** Push the current branch up to (and including) the given commit. */
+  async pushUpTo(hash: string): Promise<void> {
+    const branch = (await this.raw(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
+    let remote = 'origin';
+    try {
+      const up = (await this.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'])).trim();
+      remote = up.split('/')[0] || 'origin';
+    } catch {
+      /* no upstream yet -- default to origin */
+    }
+    await this.raw(['push', remote, `${hash}:refs/heads/${branch}`]);
+  }
+
   /** Local branches already merged into the current branch (excludes the current branch). */
   async mergedBranches(): Promise<string[]> {
     try {

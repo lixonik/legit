@@ -937,6 +937,7 @@
         { label: 'Interactively Rebase from Here...', cmd: () => vscode.postMessage({ type: 'interactiveRebase', hash: c.hash }) },
         { label: 'New Tag...', cmd: () => vscode.postMessage({ type: 'tagAt', hash: c.hash }) },
         { label: 'Create Patch...', cmd: () => vscode.postMessage({ type: 'createPatchFromCommit', hash: c.hash }) },
+        { label: 'Push All up to Here...', cmd: () => vscode.postMessage({ type: 'pushUpTo', hash: c.hash }) },
         { label: 'Copy Revision Number', cmd: () => vscode.postMessage({ type: 'copyHash', hash: c.hash }) },
         { label: 'Open Commit on Remote', cmd: () => vscode.postMessage({ type: 'openCommitRemote', hash: c.hash }) },
       );
