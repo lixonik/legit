@@ -32,6 +32,11 @@
           "type": "boolean",
           "default": true,
           "description": "Reveal the JeGit panel automatically when a git repository opens."
+        },
+        "jegit.stagingArea": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use a Git staging area (Staged / Unstaged groups) in Local Changes instead of changelists."
         }
       }
     },
