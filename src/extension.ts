@@ -10,6 +10,7 @@ import { registerContentProviders, REV_SCHEME } from './ui/quickDiff';
 import { VersionControlView } from './ui/versionControlView';
 import { showBranches } from './ui/branches';
 import { manageRemotes } from './ui/remotes';
+import { manageWorktrees } from './ui/worktrees';
 import { toWebUrl, fileWebUrl } from './util/remoteUrl';
 import { pushFlow, updateFlow } from './ui/remoteOps';
 import { stashChanges, unstash } from './ui/stash';
@@ -60,6 +61,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   reg('jegit.branches', () => showBranches(repo));
   reg('jegit.manageRemotes', () => manageRemotes(repo));
+  reg('jegit.worktrees', () => manageWorktrees(repo));
   reg('jegit.openFileOnRemote', async () => {
     const uri = vscode.window.activeTextEditor?.document.uri;
     if (!uri || uri.scheme !== 'file') {

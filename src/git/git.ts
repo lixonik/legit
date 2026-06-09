@@ -356,6 +356,42 @@ export class Git {
     }
   }
 
+  async worktrees(): Promise<{ path: string; branch: string; head: string }[]> {
+    try {
+      const out = await this.raw(['worktree', 'list', '--porcelain']);
+      const list: { path: string; branch: string; head: string }[] = [];
+      let cur: { path: string; branch: string; head: string } | null = null;
+      for (const line of out.split('\n')) {
+        if (line.startsWith('worktree ')) {
+          if (cur) list.push(cur);
+          cur = { path: line.slice(9).trim(), branch: '', head: '' };
+        } else if (cur && line.startsWith('HEAD ')) {
+          cur.head = line.slice(5).trim();
+        } else if (cur && line.startsWith('branch ')) {
+          cur.branch = line.slice(7).trim().replace('refs/heads/', '');
+        } else if (cur && line.trim() === 'detached') {
+          cur.branch = '(detached)';
+        }
+      }
+      if (cur) list.push(cur);
+      return list;
+    } catch {
+      return [];
+    }
+  }
+  async worktreeAdd(dir: string, ref: string): Promise<void> {
+    await this.raw(['worktree', 'add', dir, ref]);
+  }
+  async worktreeAddNewBranch(dir: string, newBranch: string, base: string): Promise<void> {
+    await this.raw(['worktree', 'add', '-b', newBranch, dir, base]);
+  }
+  async worktreeRemove(dir: string): Promise<void> {
+    await this.raw(['worktree', 'remove', dir]);
+  }
+  async worktreePrune(): Promise<void> {
+    await this.raw(['worktree', 'prune']);
+  }
+
   /** All file paths present at a given revision (for "Browse Repository at Revision"). */
   async lsTree(rev: string, limit = 5000): Promise<string[]> {
     try {

@@ -186,6 +186,12 @@
         "icon": "$(history)"
       },
       {
+        "command": "jegit.worktrees",
+        "title": "Worktrees...",
+        "category": "JeGit",
+        "icon": "$(repo)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",
