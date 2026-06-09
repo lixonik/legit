@@ -1270,6 +1270,8 @@
       renderBranches(m);
       const pathBtn = document.getElementById('log-path');
       if (pathBtn) pathBtn.classList.toggle('active', !!(m.logPath && m.logPath.length));
+      const branchBtn = document.getElementById('log-branch');
+      if (branchBtn) branchBtn.classList.toggle('active', !!(m.scope && m.scope !== '--all'));
     } else if (m.type === 'revealCommit') {
       revealCommit(m.hash || '');
     } else if (m.type === 'shelfData') {
