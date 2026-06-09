@@ -24,14 +24,29 @@ export async function unstash(repo: Repository): Promise<void> {
   }
   type Item = vscode.QuickPickItem & { ref: string };
   const items: Item[] = stashes.map((s) => ({ label: s.ref, description: s.subject, ref: s.ref }));
+  if (stashes.length > 1) items.push({ label: '$(trash) Clear All Stashes', ref: '__clear__' });
   const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Select a stash' });
   if (!pick) return;
+  if (pick.ref === '__clear__') {
+    const ok = await vscode.window.showWarningMessage('Drop all stashes?', { modal: true }, 'Clear All');
+    if (ok !== 'Clear All') return;
+    try {
+      await repo.git.stashClear();
+      vscode.window.showInformationMessage('JeGit: cleared all stashes.');
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+    return;
+  }
 
-  type Act = vscode.QuickPickItem & { a: 'apply' | 'pop' | 'drop' };
+  type Act = vscode.QuickPickItem & { a: 'apply' | 'pop' | 'drop' | 'branch' };
   const action = await vscode.window.showQuickPick<Act>(
     [
       { label: '$(check) Apply (keep stash)', a: 'apply' },
       { label: '$(arrow-down) Pop (apply and remove)', a: 'pop' },
+      { label: '$(git-branch) Unstash to New Branch...', a: 'branch' },
       { label: '$(trash) Drop', a: 'drop' },
     ],
     { placeHolder: pick.ref },
@@ -43,6 +58,10 @@ export async function unstash(repo: Repository): Promise<void> {
       await repo.git.stashApply(pick.ref);
     } else if (action.a === 'pop') {
       await repo.git.stashPop(pick.ref);
+    } else if (action.a === 'branch') {
+      const name = await vscode.window.showInputBox({ prompt: 'New branch name for the stashed changes', placeHolder: 'feature/wip' });
+      if (!name || !name.trim()) return;
+      await repo.git.stashBranch(name.trim(), pick.ref);
     } else {
       const ok = await vscode.window.showWarningMessage(`Drop ${pick.ref}?`, { modal: true }, 'Drop');
       if (ok !== 'Drop') return;

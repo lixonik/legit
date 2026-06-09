@@ -604,6 +604,13 @@ export class Git {
   async stashDrop(ref: string): Promise<void> {
     await this.raw(['stash', 'drop', ref]);
   }
+  async stashClear(): Promise<void> {
+    await this.raw(['stash', 'clear']);
+  }
+  /** Create a new branch from the stash base and apply the stash onto it (git stash branch). */
+  async stashBranch(name: string, ref: string): Promise<void> {
+    await this.raw(['stash', 'branch', name, ref]);
+  }
 
   async resetHard(ref: string): Promise<void> {
     await this.raw(['reset', '--hard', ref]);
