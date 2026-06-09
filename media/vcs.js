@@ -271,6 +271,34 @@
     updateCommitState();
   }
 
+  // Banner shown while a merge/rebase/cherry-pick/revert is in progress.
+  function renderOpBanner(op) {
+    const el = document.getElementById('op-banner');
+    if (!el) return;
+    if (!op) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    const label = { merge: 'Merge', rebase: 'Rebase', 'cherry-pick': 'Cherry-pick', revert: 'Revert' }[op] || op;
+    el.innerHTML = '';
+    el.style.display = 'flex';
+    const msg = document.createElement('span');
+    msg.className = 'op-msg';
+    msg.textContent = label + ' in progress -- resolve conflicts, then continue.';
+    el.appendChild(msg);
+    const mk = (text, action, cls) => {
+      const b = document.createElement('button');
+      b.textContent = text;
+      if (cls) b.className = cls;
+      b.addEventListener('click', () => vscode.postMessage({ type: 'opAction', action: action }));
+      return b;
+    };
+    el.appendChild(mk('Continue', 'continue'));
+    if (op === 'rebase') el.appendChild(mk('Skip', 'skip', 'secondary'));
+    el.appendChild(mk('Abort', 'abort', 'secondary'));
+  }
+
   function renderUnversioned(files) {
     const id = '__unversioned__';
     const node = document.createElement('div');
@@ -1150,6 +1178,7 @@
       state = m.payload;
       reconcile();
       render();
+      renderOpBanner(m.operation);
     } else if (m.type === 'committed') {
       msg.value = '';
       amend.checked = false;

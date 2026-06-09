@@ -75,6 +75,7 @@ type Incoming =
   | { type: 'setLogScope'; scope: string }
   | { type: 'compareCommits'; a: string; b: string }
   | { type: 'createPatchFromCommit'; hash: string }
+  | { type: 'opAction'; action: 'continue' | 'abort' | 'skip' }
   | { type: 'branchCmd'; ref: string; action: string; isRemote: boolean }
   | CommitMsg;
 
@@ -108,8 +109,10 @@ export class VersionControlView implements vscode.WebviewViewProvider {
     void this.repo.refresh();
   }
 
-  private postState(): void {
-    this.view?.webview.postMessage({ type: 'state', payload: this.repo.view() });
+  private async postState(): Promise<void> {
+    const payload = this.repo.view();
+    const operation = await this.repo.git.operationState().catch(() => null);
+    this.view?.webview.postMessage({ type: 'state', payload, operation });
   }
 
   private postShelf(): void {
@@ -234,6 +237,17 @@ export class VersionControlView implements vscode.WebviewViewProvider {
         const commits = await this.repo.git.log(limit, this.logScope, this.logPath);
         this.view?.webview.postMessage({ type: 'logData', commits });
         await this.postBranches();
+        break;
+      }
+      case 'opAction': {
+        const cmd =
+          m.action === 'continue'
+            ? 'jegit.continueOperation'
+            : m.action === 'abort'
+              ? 'jegit.abortOperation'
+              : 'jegit.skipCommit';
+        await vscode.commands.executeCommand(cmd);
+        await this.postState();
         break;
       }
       case 'createPatchFromCommit': {
@@ -775,6 +789,7 @@ export class VersionControlView implements vscode.WebviewViewProvider {
       <span class="sep"></span>
       <button class="tool" id="tb-group" title="Group by directory / flat list"><i class="codicon codicon-list-tree"></i></button>
     </div>
+    <div class="op-banner" id="op-banner" style="display:none"></div>
     <div class="tree" id="tree"></div>
     <div class="commit-area">
       <textarea id="message" placeholder="Commit Message" rows="2"></textarea>

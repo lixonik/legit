@@ -102,6 +102,29 @@ body {
 .tool.active .codicon { color: #fff; }
 .sep { width: 1px; height: 16px; background: var(--border-light); margin: 0 4px; }
 
+.op-banner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: #4e3a2a;
+  border-bottom: 1px solid var(--st-unv);
+  color: #f0e0c8;
+  font-size: 12px;
+}
+.op-banner .op-msg { flex: 1; }
+.op-banner button {
+  padding: 2px 10px;
+  border: 1px solid var(--btn-border);
+  border-radius: 3px;
+  background: var(--btn);
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+}
+.op-banner button.secondary { background: transparent; color: var(--fg); border-color: var(--input-border); }
+.op-banner button:hover { background: var(--btn-hover); }
 .tree {
   flex: 1 1 auto;
   min-height: 0;
