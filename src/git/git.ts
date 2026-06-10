@@ -57,6 +57,21 @@ export class Git {
     }
   }
 
+  /** Initialize a new repository in the given directory. */
+  static async init(dir: string): Promise<void> {
+    await execFileAsync('git', ['init'], { cwd: dir, windowsHide: true });
+  }
+
+  /** Clone a repository into parentDir; returns the path of the new clone. */
+  static async clone(url: string, parentDir: string, name: string): Promise<string> {
+    await execFileAsync('git', ['clone', '--', url, name], {
+      cwd: parentDir,
+      windowsHide: true,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return path.join(parentDir, name);
+  }
+
   static async findRepoRoot(cwd: string): Promise<string | undefined> {
     try {
       const { stdout } = await execFileAsync('git', ['rev-parse', '--show-toplevel'], {

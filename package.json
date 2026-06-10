@@ -209,6 +209,18 @@
         "icon": "$(discard)"
       },
       {
+        "command": "jegit.init",
+        "title": "Create Git Repository",
+        "category": "JeGit",
+        "icon": "$(repo-create)"
+      },
+      {
+        "command": "jegit.clone",
+        "title": "Clone Repository...",
+        "category": "JeGit",
+        "icon": "$(repo-clone)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",
