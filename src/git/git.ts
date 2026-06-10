@@ -678,6 +678,15 @@ export class Git {
     await this.raw(['reset', '--hard', ref]);
   }
 
+  /** Short upstream name of the current branch (e.g. origin/main), or '' if none. */
+  async upstreamRef(): Promise<string> {
+    try {
+      return (await this.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'])).trim();
+    } catch {
+      return '';
+    }
+  }
+
   /**
    * Run a single-commit interactive rebase action (drop / fixup / reword) using a
    * scripted sequence editor. If the rebase stops (e.g. a conflict), it is aborted

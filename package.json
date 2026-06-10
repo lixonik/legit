@@ -203,6 +203,12 @@
         "icon": "$(git-merge)"
       },
       {
+        "command": "jegit.resetToRemote",
+        "title": "Reset to the Remote Branch",
+        "category": "JeGit",
+        "icon": "$(discard)"
+      },
+      {
         "command": "jegit.stash",
         "title": "Stash Changes...",
         "category": "JeGit",

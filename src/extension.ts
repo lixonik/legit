@@ -273,6 +273,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const uri = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file, query: rev.trim() });
     await vscode.commands.executeCommand('vscode.open', uri);
   });
+  reg('jegit.resetToRemote', async () => {
+    const upstream = await git.upstreamRef();
+    if (!upstream) {
+      vscode.window.showInformationMessage('JeGit: the current branch has no upstream.');
+      return;
+    }
+    const { current } = await git.branches();
+    const ok = await vscode.window.showWarningMessage(
+      `Reset local branch ${current} to ${upstream}? Local commits will be dropped.`,
+      { modal: true },
+      'Reset',
+    );
+    if (ok !== 'Reset') return;
+    try {
+      await git.fetch().catch(() => undefined);
+      await git.resetHard(upstream);
+      vscode.window.showInformationMessage(`JeGit: ${current} reset to ${upstream}.`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`JeGit: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      await repo.refresh();
+    }
+  });
   reg('jegit.resolveConflicts', async () => {
     const status = await git.status().catch(() => []);
     const conflicted = status.filter((f) => f.status.includes('U') || f.status === 'AA' || f.status === 'DD');
