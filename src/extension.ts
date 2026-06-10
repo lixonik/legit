@@ -15,6 +15,7 @@ import { toWebUrl, fileWebUrl } from './util/remoteUrl';
 import { pushFlow, updateFlow } from './ui/remoteOps';
 import { stashChanges, unstash } from './ui/stash';
 import { BlameController } from './ui/blame';
+import { showMergeResolver } from './ui/mergeResolver';
 import { showFileHistory } from './ui/history';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -271,6 +272,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (!file) return;
     const uri = vscode.Uri.from({ scheme: REV_SCHEME, path: '/' + file, query: rev.trim() });
     await vscode.commands.executeCommand('vscode.open', uri);
+  });
+  reg('jegit.resolveConflicts', async () => {
+    const status = await git.status().catch(() => []);
+    const conflicted = status.filter((f) => f.status.includes('U') || f.status === 'AA' || f.status === 'DD');
+    if (!conflicted.length) {
+      vscode.window.showInformationMessage('JeGit: no conflicts to resolve.');
+      return;
+    }
+    type Item = vscode.QuickPickItem & { rel: string };
+    const items: Item[] = conflicted.map((f) => ({
+      label: '$(git-merge) ' + f.path,
+      description: f.status,
+      rel: f.path,
+    }));
+    const pick = await vscode.window.showQuickPick(items, {
+      placeHolder: `${conflicted.length} conflicted file(s) -- open in the merge resolver`,
+    });
+    if (!pick) return;
+    await showMergeResolver(context, repo, pick.rel);
   });
   reg('jegit.cleanupBranches', async () => {
     const { current } = await git.branches();
