@@ -27,4 +27,26 @@ describe('splitStaged', () => {
     expect(r.staged[0]).toEqual({ path: 'a.ts', letter: 'A' });
     expect(r.unstaged[0]).toEqual({ path: 'a.ts', letter: 'M' });
   });
+
+  it('puts conflict statuses (UU/AA/DD) in both staged and unstaged', () => {
+    for (const status of ['UU', 'AA', 'DD']) {
+      const r = splitStaged([{ path: 'c.ts', status }]);
+      expect(r.staged).toEqual([{ path: 'c.ts', letter: status[0] }]);
+      expect(r.unstaged).toEqual([{ path: 'c.ts', letter: status[1] }]);
+      expect(r.untracked).toHaveLength(0);
+    }
+  });
+
+  it('pads a one-character status (only the index side set)', () => {
+    const r = splitStaged([{ path: 'a.ts', status: 'M' }]);
+    expect(r.staged).toEqual([{ path: 'a.ts', letter: 'M' }]);
+    expect(r.unstaged).toHaveLength(0);
+  });
+
+  it('returns empty groups for empty input', () => {
+    const r = splitStaged([]);
+    expect(r.staged).toHaveLength(0);
+    expect(r.unstaged).toHaveLength(0);
+    expect(r.untracked).toHaveLength(0);
+  });
 });
