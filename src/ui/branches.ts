@@ -14,6 +14,11 @@ export async function showBranches(repo: Repository): Promise<void> {
     { label: '$(trash) Clean Up Merged Branches...', action: 'cleanup' },
   ];
 
+  const recent = (await repo.git.recentBranches(5)).filter((b) => b !== current && locals.includes(b));
+  if (recent.length) {
+    items.push({ label: 'Recent', kind: vscode.QuickPickItemKind.Separator });
+    for (const b of recent) items.push({ label: '$(history) ' + b, ref: b });
+  }
   if (locals.length) {
     items.push({ label: 'Local', kind: vscode.QuickPickItemKind.Separator });
     for (const b of locals) {
@@ -52,7 +57,10 @@ export async function showBranches(repo: Repository): Promise<void> {
 
 async function branchActions(repo: Repository, ref: string, current: string, isRemote: boolean): Promise<void> {
   const actions: ActionItem[] = [];
-  if (ref !== current) actions.push({ label: '$(check) Checkout', a: 'checkout' });
+  if (ref !== current) {
+    actions.push({ label: '$(check) Checkout', a: 'checkout' });
+    actions.push({ label: '$(sync) Checkout and Update', a: 'checkoutUpdate' });
+  }
   actions.push({ label: `$(git-branch) New Branch from ${ref}...`, a: 'newfrom' });
   if (ref !== current) {
     actions.push({ label: `$(git-merge) Merge ${ref} into ${current}`, a: 'merge' });
@@ -84,6 +92,12 @@ export async function performBranchAction(
     switch (action) {
       case 'checkout':
         await repo.git.checkout(isRemote ? ref.substring(ref.indexOf('/') + 1) : ref);
+        break;
+      case 'checkoutUpdate':
+        // Checkout the branch and update it from its tracked branch in one step.
+        await repo.git.checkout(isRemote ? ref.substring(ref.indexOf('/') + 1) : ref);
+        await repo.git.fetch().catch(() => undefined);
+        await repo.git.pull(false);
         break;
       case 'newfrom':
         await newBranchFrom(repo, ref);

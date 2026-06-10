@@ -369,6 +369,25 @@ export class Git {
     await this.raw(['push', remote, `${hash}:refs/heads/${branch}`]);
   }
 
+  /** Recently checked-out branch names from the reflog, most recent first. */
+  async recentBranches(limit = 5): Promise<string[]> {
+    try {
+      const out = await this.raw(['reflog', '--format=%gs', '-n', '200']);
+      const seen = new Set<string>();
+      for (const line of out.split('\n')) {
+        const m = /^checkout: moving from .+ to (.+)$/.exec(line.trim());
+        if (!m) continue;
+        const to = m[1];
+        if (/^[0-9a-f]{40}$/.test(to)) continue; // detached checkouts
+        seen.add(to);
+        if (seen.size >= limit + 1) break;
+      }
+      return [...seen].slice(0, limit + 1);
+    } catch {
+      return [];
+    }
+  }
+
   /** Local branches already merged into the current branch (excludes the current branch). */
   async mergedBranches(): Promise<string[]> {
     try {
